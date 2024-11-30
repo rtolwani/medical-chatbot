@@ -1,15 +1,16 @@
 from flask import Flask, request, jsonify, render_template
 from werkzeug.utils import secure_filename
 import os
-from openai import OpenAI
 from dotenv import load_dotenv
 import PyPDF2
 
 # Load environment variables
 load_dotenv()
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-app = Flask(__name__)
+app = Flask(__name__, 
+           template_folder='.', 
+           static_folder='.')
+           
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
@@ -70,22 +71,18 @@ def query():
     question = data['question']
     
     try:
-        # Get response from OpenAI
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful medical assistant. Answer questions based on the provided medical reference. If the answer cannot be found in the reference, say 'I cannot answer this based on the provided medical reference.'"},
-                {"role": "user", "content": f"""Medical Reference:
-{medical_context[:3000]}  # Using first 3000 chars for context window
+        # Mock response since OpenAI API key is not set
+        mock_response = f"""This is a mock response as the OpenAI API key is not configured yet.
 
-Question: {question}"""}
-            ],
-            max_tokens=150,
-            temperature=0.3,
-        )
-        
-        answer = response.choices[0].message.content.strip()
-        return jsonify({'answer': answer})
+Your question was: "{question}"
+
+To get real AI-powered responses:
+1. Get an OpenAI API key from platform.openai.com
+2. Set it in your deployment environment variables as OPENAI_API_KEY
+
+For now, I can tell you that your uploaded document contains {len(medical_context)} characters."""
+
+        return jsonify({'answer': mock_response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
