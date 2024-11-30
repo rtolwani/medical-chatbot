@@ -231,6 +231,158 @@ Remember: While you can provide medical information and education, always remind
                         </div>
                     </div>
                     <script>
+                        // Voice Input Setup with Mobile Support
+                        class VoiceInput {
+                            constructor() {
+                                this.isRecording = false;
+                                this.mediaRecorder = null;
+                                this.audioChunks = [];
+                                this.stream = null;
+                                
+                                // Setup Web Speech API if available
+                                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                                if (SpeechRecognition) {
+                                    this.recognition = new SpeechRecognition();
+                                    this.recognition.continuous = true;
+                                    this.recognition.interimResults = true;
+                                    this.recognition.lang = 'en-US';
+                                    this.setupSpeechRecognition();
+                                } else {
+                                    this.recognition = null;
+                                }
+                            }
+
+                            setupSpeechRecognition() {
+                                this.recognition.onstart = () => {
+                                    this.updateMicButton(true);
+                                };
+
+                                this.recognition.onend = () => {
+                                    this.updateMicButton(false);
+                                };
+
+                                this.recognition.onresult = (event) => {
+                                    let finalTranscript = '';
+                                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                                        const transcript = event.results[i][0].transcript;
+                                        if (event.results[i].isFinal) {
+                                            finalTranscript += transcript;
+                                        }
+                                    }
+                                    if (finalTranscript) {
+                                        document.getElementById('questionInput').value = finalTranscript;
+                                        this.stopRecording();
+                                    }
+                                };
+
+                                this.recognition.onerror = (event) => {
+                                    console.error('Speech recognition error:', event.error);
+                                    this.updateMicButton(false);
+                                };
+                            }
+
+                            updateMicButton(isActive) {
+                                const micButton = document.getElementById('micButton');
+                                if (isActive) {
+                                    micButton.classList.add('mic-active', 'mic-pulse');
+                                } else {
+                                    micButton.classList.remove('mic-active', 'mic-pulse');
+                                }
+                            }
+
+                            async startRecording() {
+                                try {
+                                    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                                    this.isRecording = true;
+                                    this.audioChunks = [];
+                                    
+                                    this.mediaRecorder = new MediaRecorder(this.stream);
+                                    this.mediaRecorder.ondataavailable = (event) => {
+                                        if (event.data.size > 0) {
+                                            this.audioChunks.push(event.data);
+                                        }
+                                    };
+
+                                    this.mediaRecorder.onstop = async () => {
+                                        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                                        await this.transcribeAudio(audioBlob);
+                                        this.stream.getTracks().forEach(track => track.stop());
+                                    };
+
+                                    this.mediaRecorder.start();
+                                    this.updateMicButton(true);
+
+                                    // Also start Web Speech API if available
+                                    if (this.recognition) {
+                                        this.recognition.start();
+                                    }
+                                } catch (error) {
+                                    console.error('Error starting recording:', error);
+                                    alert('Unable to access microphone. Please check your permissions.');
+                                    this.updateMicButton(false);
+                                }
+                            }
+
+                            async stopRecording() {
+                                if (this.isRecording) {
+                                    this.isRecording = false;
+                                    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                                        this.mediaRecorder.stop();
+                                    }
+                                    if (this.recognition) {
+                                        this.recognition.stop();
+                                    }
+                                    this.updateMicButton(false);
+                                }
+                            }
+
+                            async transcribeAudio(audioBlob) {
+                                // Only transcribe if Web Speech API failed or isn't available
+                                if (!this.recognition || document.getElementById('questionInput').value === '') {
+                                    const formData = new FormData();
+                                    formData.append('audio', audioBlob);
+
+                                    try {
+                                        const response = await fetch('/transcribe', {
+                                            method: 'POST',
+                                            body: formData
+                                        });
+                                        const data = await response.json();
+                                        if (data.text) {
+                                            document.getElementById('questionInput').value = data.text;
+                                        }
+                                    } catch (error) {
+                                        console.error('Transcription error:', error);
+                                    }
+                                }
+                            }
+
+                            toggleRecording() {
+                                if (!this.isRecording) {
+                                    this.startRecording();
+                                } else {
+                                    this.stopRecording();
+                                }
+                            }
+                        }
+
+                        // Initialize voice input
+                        const voiceInput = new VoiceInput();
+
+                        // Add click handler for microphone button
+                        document.getElementById('micButton').addEventListener('click', () => {
+                            voiceInput.toggleRecording();
+                        });
+
+                        // Add keyboard shortcut (spacebar) for voice input
+                        document.addEventListener('keydown', (e) => {
+                            // Only trigger if no input is focused and spacebar is pressed
+                            if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT') {
+                                e.preventDefault();
+                                voiceInput.toggleRecording();
+                            }
+                        });
+
                         // Podcast Upload and Player Functionality
                         document.getElementById('podcastUpload').addEventListener('change', async (e) => {
                             const file = e.target.files[0];
@@ -324,66 +476,6 @@ Remember: While you can provide medical information and education, always remind
                             const input = document.getElementById('podcastUpload');
                             input.files = dt.files;
                             input.dispatchEvent(new Event('change'));
-                        }
-
-                        // Speech Recognition Setup
-                        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                        let recognition = null;
-                        let isListening = false;
-
-                        if (SpeechRecognition) {
-                            recognition = new SpeechRecognition();
-                            recognition.continuous = true;
-                            recognition.interimResults = true;
-                            recognition.lang = 'en-US';
-
-                            recognition.onstart = () => {
-                                isListening = true;
-                                const micButton = document.getElementById('micButton');
-                                micButton.classList.add('mic-active', 'mic-pulse');
-                            };
-
-                            recognition.onend = () => {
-                                isListening = false;
-                                const micButton = document.getElementById('micButton');
-                                micButton.classList.remove('mic-active', 'mic-pulse');
-                            };
-
-                            recognition.onresult = (event) => {
-                                const input = document.getElementById('questionInput');
-                                let finalTranscript = '';
-
-                                for (let i = event.resultIndex; i < event.results.length; i++) {
-                                    const transcript = event.results[i][0].transcript;
-                                    if (event.results[i].isFinal) {
-                                        finalTranscript += transcript;
-                                    }
-                                }
-
-                                if (finalTranscript) {
-                                    input.value = finalTranscript;
-                                    recognition.stop();
-                                }
-                            };
-
-                            recognition.onerror = (event) => {
-                                console.error('Speech recognition error:', event.error);
-                                isListening = false;
-                                const micButton = document.getElementById('micButton');
-                                micButton.classList.remove('mic-active', 'mic-pulse');
-                            };
-
-                            // Add click handler for microphone button
-                            document.getElementById('micButton').addEventListener('click', () => {
-                                if (!isListening) {
-                                    recognition.start();
-                                } else {
-                                    recognition.stop();
-                                }
-                            });
-                        } else {
-                            // Hide mic button if speech recognition is not supported
-                            document.getElementById('micButton').style.display = 'none';
                         }
 
                         // Tab switching functionality
@@ -531,6 +623,48 @@ Remember: While you can provide medical information and education, always remind
                 logger.error(f"OpenAI API error: {str(e)}")
                 logger.error(traceback.format_exc())
                 return jsonify({"error": "Failed to generate response from AI model"}), 500
+            except Exception as e:
+                logger.error(f"Unexpected error during OpenAI call: {str(e)}")
+                logger.error(traceback.format_exc())
+                return jsonify({"error": "An unexpected error occurred"}), 500
+
+        except Exception as e:
+            logger.error(f"Server error: {str(e)}")
+            logger.error(traceback.format_exc())
+            return jsonify({"error": "Internal server error"}), 500
+
+    @app.route('/transcribe', methods=['POST'])
+    def transcribe():
+        try:
+            file = request.files['audio']
+            if file.filename == '':
+                return jsonify({'error': 'No file selected'}), 400
+
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+            # Transcribe audio file using OpenAI API
+            try:
+                completion = client.chat.completions.create(
+                    model="whisper-1",
+                    messages=[
+                        {"role": "user", "content": f"Transcribe {filename}"},
+                    ],
+                    temperature=0.7,
+                    max_tokens=500
+                )
+
+                transcription = completion.choices[0].message.content
+                logger.info("Successfully transcribed audio")
+                
+                return jsonify({
+                    "text": transcription
+                })
+
+            except OpenAIError as e:
+                logger.error(f"OpenAI API error: {str(e)}")
+                logger.error(traceback.format_exc())
+                return jsonify({"error": "Failed to transcribe audio"}), 500
             except Exception as e:
                 logger.error(f"Unexpected error during OpenAI call: {str(e)}")
                 logger.error(traceback.format_exc())
