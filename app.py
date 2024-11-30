@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
+import logging
 
 # Load environment variables
 load_dotenv()
@@ -9,7 +10,12 @@ load_dotenv()
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-app = Flask(__name__)
+# Initialize Flask app with explicit template folder
+app = Flask(__name__, 
+           template_folder='templates')
+
+# Configure logging
+app.logger.setLevel(logging.DEBUG)
 
 SYSTEM_PROMPT = """You are Dr. Ashita Tolwani, MD, a distinguished ICU nephrologist and world-renowned expert in continuous renal replacement therapy (CRRT). You are a Professor of Medicine in the Division of Nephrology, with over two decades of experience in critical care nephrology.
 
@@ -33,36 +39,51 @@ Remember: While you can provide medical information and education, always remind
 
 @app.route('/')
 def home():
-    return render_template('templates/index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        app.logger.error(f"Error rendering template: {str(e)}")
+        return jsonify({"error": "Failed to load the application"}), 500
 
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
         data = request.json
-        user_message = data.get('message', '')
+        if not data or 'message' not in data:
+            return jsonify({"error": "No message provided"}), 400
+
+        user_message = data['message']
 
         # Create chat completion with OpenAI
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_message}
-            ],
-            temperature=0.7,
-            max_tokens=500
-        )
+        try:
+            completion = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_message}
+                ],
+                temperature=0.7,
+                max_tokens=500
+            )
 
-        # Extract the assistant's response
-        assistant_response = completion.choices[0].message.content
-        
-        return jsonify({
-            "response": assistant_response
-        })
+            # Extract the assistant's response
+            assistant_response = completion.choices[0].message.content
+            
+            return jsonify({
+                "response": assistant_response
+            })
+        except Exception as e:
+            app.logger.error(f"OpenAI API error: {str(e)}")
+            return jsonify({"error": "Failed to generate response"}), 500
 
     except Exception as e:
-        return jsonify({
-            "error": str(e)
-        }), 500
+        app.logger.error(f"Server error: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
+    # For local development
     app.run(debug=True)
+else:
+    # For production
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
