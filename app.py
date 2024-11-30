@@ -87,9 +87,9 @@ Remember: While you can provide medical information and education, always remind
                 <html>
                 <head>
                     <title>Ashita Tolwani's Medical Assistant</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
                     <script src="https://cdn.tailwindcss.com"></script>
                     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-                    <link href="https://unpkg.com/heroicons@2.0.18/outline/microphone.svg" rel="stylesheet">
                     <style>
                         body {
                             font-family: 'Inter', sans-serif;
@@ -106,52 +106,64 @@ Remember: While you can provide medical information and education, always remind
                             animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
                         }
                         @keyframes pulse {
-                            0%, 100% {
-                                opacity: 1;
-                            }
-                            50% {
-                                opacity: .5;
-                            }
-                        }
-                        .podcast-player {
-                            width: 100%;
-                            max-width: 600px;
-                        }
-                        .upload-area {
-                            border: 2px dashed #CBD5E1;
-                            border-radius: 0.5rem;
-                            transition: all 0.2s ease;
-                        }
-                        .upload-area:hover {
-                            border-color: #3B82F6;
-                            background-color: #F8FAFC;
+                            0%, 100% { opacity: 1; }
+                            50% { opacity: .5; }
                         }
                         .chat-message {
-                            font-size: 1.125rem; /* 18px by default */
+                            font-size: 1.25rem;
                             line-height: 1.75;
-                            padding: 1rem 1.25rem;
-                            border-radius: 0.75rem;
-                            margin: 0.75rem 0;
+                            padding: 1.25rem 1.5rem;
+                            border-radius: 1rem;
+                            margin: 1rem 0;
                         }
-                        /* Larger text on mobile */
                         @media (max-width: 768px) {
-                            .chat-message {
-                                font-size: 1.25rem; /* 20px on mobile */
-                                padding: 1.25rem 1.5rem;
-                                margin: 1rem 0;
+                            .profile-image {
+                                width: 180px !important;
+                                height: 180px !important;
                             }
-                            #questionInput {
-                                font-size: 1.25rem;
-                                padding: 1rem 1.25rem;
+                            .header-title {
+                                font-size: 2rem !important;
                             }
-                            .welcome-text {
+                            .header-subtitle {
                                 font-size: 1.5rem !important;
                             }
-                        }
-                        /* Even larger text on small mobile screens */
-                        @media (max-width: 480px) {
+                            .header-text {
+                                font-size: 1.25rem !important;
+                            }
+                            .welcome-text {
+                                font-size: 1.75rem !important;
+                                line-height: 1.4 !important;
+                                margin: 2rem 0 !important;
+                            }
                             .chat-message {
-                                font-size: 1.375rem; /* 22px on small mobile */
+                                font-size: 1.5rem;
+                                padding: 1.5rem;
+                                margin: 1.25rem 0;
+                                line-height: 1.6;
+                            }
+                            #questionInput {
+                                font-size: 1.5rem !important;
+                                padding: 1.25rem !important;
+                                height: auto !important;
+                            }
+                            .send-button {
+                                padding: 1.25rem 2rem !important;
+                                font-size: 1.25rem !important;
+                            }
+                            .mic-button {
+                                padding: 1.25rem !important;
+                            }
+                            .mic-button svg {
+                                width: 2rem !important;
+                                height: 2rem !important;
+                            }
+                            .tab-button {
+                                font-size: 1.25rem !important;
+                                padding: 1.25rem 2rem !important;
+                            }
+                            .expertise-tag {
+                                font-size: 1.125rem !important;
+                                padding: 0.75rem 1.25rem !important;
                             }
                         }
                     </style>
@@ -163,12 +175,12 @@ Remember: While you can provide medical information and education, always remind
                             <div class="container mx-auto px-4">
                                 <div class="flex justify-center space-x-8">
                                     <button onclick="switchTab('chat')" 
-                                            class="tab-active px-4 py-4 text-sm font-medium transition-colors duration-200" 
+                                            class="tab-button tab-active px-4 py-4 text-base font-medium transition-colors duration-200" 
                                             id="chatTab">
                                         Chat
                                     </button>
                                     <button onclick="switchTab('podcasts')" 
-                                            class="px-4 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors duration-200" 
+                                            class="tab-button px-4 py-4 text-base font-medium text-gray-500 hover:text-gray-700 transition-colors duration-200" 
                                             id="podcastsTab">
                                         Podcasts
                                     </button>
@@ -176,31 +188,31 @@ Remember: While you can provide medical information and education, always remind
                             </div>
                         </div>
 
-                        <div class="container mx-auto px-4 py-8">
+                        <div class="container mx-auto px-4 py-6">
                             <div class="max-w-4xl mx-auto">
                                 <!-- Header -->
-                                <div class="flex flex-col md:flex-row items-center justify-center mb-8 space-y-4 md:space-y-0 md:space-x-8">
-                                    <div class="w-48 h-48 rounded-full overflow-hidden shadow-lg">
+                                <div class="flex flex-col md:flex-row items-center justify-center mb-8 space-y-6 md:space-y-0 md:space-x-8">
+                                    <div class="profile-image w-40 h-40 rounded-full overflow-hidden shadow-lg">
                                         <img src="https://static.wixstatic.com/media/06422e_2ad5633eaef843d590f2b44f44a8968f~mv2.png/v1/fill/w_688,h_688,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/Ashita%20Tolwani%20MD.png" 
                                              alt="Ashita Tolwani" 
                                              class="w-full h-full object-cover">
                                     </div>
                                     <div class="text-center md:text-left">
-                                        <h1 class="text-3xl font-bold text-gray-800">Ashita Tolwani, MD</h1>
-                                        <p class="text-lg text-gray-600 mt-2">Professor of Medicine</p>
-                                        <p class="text-gray-600">Division of Nephrology</p>
-                                        <p class="text-gray-600">University of Alabama at Birmingham</p>
-                                        <div class="mt-4">
-                                            <span class="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mr-2 mb-2">Nephrology</span>
-                                            <span class="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mr-2 mb-2">Critical Care</span>
-                                            <span class="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mb-2">CRRT Expert</span>
+                                        <h1 class="header-title text-4xl font-bold text-gray-800">Ashita Tolwani, MD</h1>
+                                        <p class="header-subtitle text-2xl text-gray-600 mt-2">Professor of Medicine</p>
+                                        <p class="header-text text-xl text-gray-600">Division of Nephrology</p>
+                                        <p class="header-text text-xl text-gray-600">University of Alabama at Birmingham</p>
+                                        <div class="mt-4 flex flex-wrap justify-center md:justify-start gap-2">
+                                            <span class="expertise-tag inline-block bg-blue-100 text-blue-800 text-base px-4 py-2 rounded-full">Nephrology</span>
+                                            <span class="expertise-tag inline-block bg-blue-100 text-blue-800 text-base px-4 py-2 rounded-full">Critical Care</span>
+                                            <span class="expertise-tag inline-block bg-blue-100 text-blue-800 text-base px-4 py-2 rounded-full">CRRT Expert</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Welcome Message -->
-                                <div class="text-center mb-8">
-                                    <p class="welcome-text text-xl text-gray-700">Hello, I'm Ashita Tolwani MD's AI.<br/>What would you like to discuss today?</p>
+                                <div class="text-center">
+                                    <p class="welcome-text text-2xl text-gray-700">Hello, I'm Ashita Tolwani MD's AI.<br/>What would you like to discuss today?</p>
                                 </div>
 
                                 <!-- Content Sections -->
@@ -211,18 +223,18 @@ Remember: While you can provide medical information and education, always remind
                                             <div class="flex space-x-4">
                                                 <input type="text" 
                                                        id="questionInput" 
-                                                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                                       class="flex-1 p-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                                        placeholder="Ask a medical question...">
                                                 <button type="button"
                                                         id="micButton"
-                                                        class="p-3 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        class="mic-button p-4 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                         title="Click to speak">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
                                                     </svg>
                                                 </button>
                                                 <button type="submit" 
-                                                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200">
+                                                        class="send-button bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium transition-colors duration-200 text-lg">
                                                     Send
                                                 </button>
                                             </div>
