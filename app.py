@@ -79,17 +79,55 @@ Remember: While you can provide medical information and education, always remind
                 <head>
                     <title>Dr. Tolwani's Medical Assistant</title>
                     <script src="https://cdn.tailwindcss.com"></script>
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        body {
+                            font-family: 'Inter', sans-serif;
+                        }
+                    </style>
                 </head>
                 <body class="bg-gray-50">
-                    <div class="container mx-auto px-4 py-8">
-                        <h1 class="text-2xl font-bold mb-4">Dr. Tolwani's Medical Assistant</h1>
-                        <div class="mb-4">
-                            <form id="questionForm" class="space-y-4">
-                                <input type="text" id="questionInput" class="w-full p-2 border rounded" placeholder="Ask a medical question...">
-                                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Send</button>
-                            </form>
+                    <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+                        <div class="container mx-auto px-4 py-8">
+                            <div class="max-w-4xl mx-auto">
+                                <!-- Header -->
+                                <div class="flex flex-col md:flex-row items-center justify-center mb-8 space-y-4 md:space-y-0 md:space-x-8">
+                                    <div class="w-48 h-48 rounded-full overflow-hidden shadow-lg">
+                                        <img src="https://medicine.uab.edu/wp-content/uploads/sites/4/2017/05/Ashita-Tolwani.jpg" 
+                                             alt="Dr. Ashita Tolwani" 
+                                             class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="text-center md:text-left">
+                                        <h1 class="text-3xl font-bold text-gray-800">Dr. Ashita Tolwani, MD</h1>
+                                        <p class="text-lg text-gray-600 mt-2">Professor of Medicine</p>
+                                        <p class="text-gray-600">Division of Nephrology</p>
+                                        <p class="text-gray-600">University of Alabama at Birmingham</p>
+                                        <div class="mt-4">
+                                            <span class="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mr-2 mb-2">Nephrology</span>
+                                            <span class="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mr-2 mb-2">Critical Care</span>
+                                            <span class="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mb-2">CRRT Expert</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Chat Interface -->
+                                <div class="bg-white rounded-lg shadow-lg p-6">
+                                    <div id="chatMessages" class="space-y-4 mb-6 max-h-[500px] overflow-y-auto"></div>
+                                    <form id="questionForm" class="mt-4">
+                                        <div class="flex space-x-4">
+                                            <input type="text" 
+                                                   id="questionInput" 
+                                                   class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                                   placeholder="Ask a medical question...">
+                                            <button type="submit" 
+                                                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200">
+                                                Send
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                        <div id="chatMessages" class="space-y-4"></div>
                     </div>
                     <script>
                         document.getElementById('questionForm').addEventListener('submit', async (e) => {
@@ -125,10 +163,16 @@ Remember: While you can provide medical information and education, always remind
                         function addMessage(type, content) {
                             const messages = document.getElementById('chatMessages');
                             const div = document.createElement('div');
-                            div.className = `p-4 rounded ${type === 'user' ? 'bg-blue-100' : type === 'error' ? 'bg-red-100' : 'bg-gray-100'}`;
+                            div.className = `p-4 rounded-lg ${
+                                type === 'user' 
+                                    ? 'bg-blue-100 text-blue-900 ml-12' 
+                                    : type === 'error' 
+                                        ? 'bg-red-100 text-red-900' 
+                                        : 'bg-gray-100 text-gray-900 mr-12'
+                            }`;
                             div.textContent = content;
                             messages.appendChild(div);
-                            div.scrollIntoView({ behavior: 'smooth' });
+                            messages.scrollTop = messages.scrollHeight;
                         }
                     </script>
                 </body>
