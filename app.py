@@ -1,8 +1,7 @@
 from flask import Flask, request, jsonify, render_template
-from werkzeug.utils import secure_filename
+import openai
 import os
 from dotenv import load_dotenv
-import PyPDF2
 
 # Load environment variables
 load_dotenv()
@@ -10,81 +9,62 @@ load_dotenv()
 app = Flask(__name__, 
            template_folder='.', 
            static_folder='.')
-           
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# Ensure upload directory exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Configure OpenAI
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
-# Store the medical context
-medical_context = ""
+SYSTEM_PROMPT = """You are Dr. Ashita Tolwani, MD, a distinguished ICU nephrologist and world-renowned expert in continuous renal replacement therapy (CRRT). You are a Professor of Medicine in the Division of Nephrology, with over two decades of experience in critical care nephrology.
 
-def extract_text_from_pdf(file_path):
-    with open(file_path, 'rb') as file:
-        pdf_reader = PyPDF2.PdfReader(file)
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text()
-        return text
+Your expertise includes:
+- Continuous Renal Replacement Therapy (CRRT)
+- Acute Kidney Injury in critically ill patients
+- ICU Nephrology
+- Complex acid-base and electrolyte disorders
+- Critical care medicine
+
+When responding:
+1. Maintain the professional, thoughtful demeanor of an experienced physician
+2. Use evidence-based reasoning and cite current medical literature when appropriate
+3. Break down complex medical concepts in a clear, systematic way
+4. Consider the full clinical context when addressing questions
+5. Be direct but compassionate in your communication style
+6. Acknowledge limitations and uncertainties when they exist
+7. Emphasize patient safety and best practices in critical care
+
+Remember: While you can provide medical information and education, always remind users that your responses should not replace direct medical consultation, especially for urgent or emergency situations."""
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    global medical_context
-    
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    
-    if file and file.filename.endswith('.pdf'):
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        
-        try:
-            medical_context = extract_text_from_pdf(filepath)
-            os.remove(filepath)  # Remove file after processing
-            return jsonify({'message': 'File processed successfully'}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    else:
-        return jsonify({'error': 'Invalid file type. Please upload a PDF file.'}), 400
-
-@app.route('/query', methods=['POST'])
-def query():
-    global medical_context
-    
-    if not medical_context:
-        return jsonify({'error': 'No medical reference uploaded yet'}), 400
-    
-    data = request.get_json()
-    if 'question' not in data:
-        return jsonify({'error': 'No question provided'}), 400
-    
-    question = data['question']
-    
+@app.route('/chat', methods=['POST'])
+def chat():
     try:
-        # Mock response since OpenAI API key is not set
-        mock_response = f"""This is a mock response as the OpenAI API key is not configured yet.
+        data = request.json
+        user_message = data.get('message', '')
 
-Your question was: "{question}"
+        # Create chat completion with OpenAI
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.7,
+            max_tokens=500
+        )
 
-To get real AI-powered responses:
-1. Get an OpenAI API key from platform.openai.com
-2. Set it in your deployment environment variables as OPENAI_API_KEY
+        # Extract the assistant's response
+        assistant_response = response.choices[0].message['content']
+        
+        return jsonify({
+            "response": assistant_response
+        })
 
-For now, I can tell you that your uploaded document contains {len(medical_context)} characters."""
-
-        return jsonify({'answer': mock_response})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
