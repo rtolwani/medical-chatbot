@@ -20,14 +20,12 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 medical_context = ""
 
 def extract_text_from_pdf(file_path):
-    global medical_context
     with open(file_path, 'rb') as file:
         pdf_reader = PyPDF2.PdfReader(file)
         text = ""
         for page in pdf_reader.pages:
-            text += page.extract_text() + "\n"
-    medical_context = text
-    return text
+            text += page.extract_text()
+        return text
 
 @app.route('/')
 def home():
@@ -35,6 +33,8 @@ def home():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    global medical_context
+    
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     
@@ -44,16 +44,17 @@ def upload_file():
     
     if file and file.filename.endswith('.pdf'):
         filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
         
         try:
-            text = extract_text_from_pdf(file_path)
-            return jsonify({'message': 'File processed successfully', 'text_length': len(text)})
+            medical_context = extract_text_from_pdf(filepath)
+            os.remove(filepath)  # Remove file after processing
+            return jsonify({'message': 'File processed successfully'}), 200
         except Exception as e:
             return jsonify({'error': str(e)}), 500
-    
-    return jsonify({'error': 'Invalid file type'}), 400
+    else:
+        return jsonify({'error': 'Invalid file type. Please upload a PDF file.'}), 400
 
 @app.route('/query', methods=['POST'])
 def query():
@@ -89,4 +90,5 @@ Question: {question}"""}
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
