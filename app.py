@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import logging
 import sys
 import traceback
+from werkzeug.utils import secure_filename
 
 # Configure logging
 logging.basicConfig(
@@ -20,7 +21,15 @@ load_dotenv()
 def create_app():
     # Initialize Flask app
     app = Flask(__name__)
-    
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+    app.config['UPLOAD_FOLDER'] = 'static/podcasts'
+    app.secret_key = os.urandom(24)  # for flash messages
+
+    ALLOWED_EXTENSIONS = {'mp3', 'wav', 'm4a', 'ogg'}
+
+    def allowed_file(filename):
+        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
     # Log important directories
     logger.info(f"Current working directory: {os.getcwd()}")
     logger.info(f"App root path: {app.root_path}")
@@ -104,6 +113,19 @@ Remember: While you can provide medical information and education, always remind
                                 opacity: .5;
                             }
                         }
+                        .podcast-player {
+                            width: 100%;
+                            max-width: 600px;
+                        }
+                        .upload-area {
+                            border: 2px dashed #CBD5E1;
+                            border-radius: 0.5rem;
+                            transition: all 0.2s ease;
+                        }
+                        .upload-area:hover {
+                            border-color: #3B82F6;
+                            background-color: #F8FAFC;
+                        }
                     </style>
                 </head>
                 <body class="bg-gray-50">
@@ -184,13 +206,126 @@ Remember: While you can provide medical information and education, always remind
                                 <div id="podcastsSection" class="hidden transition-opacity duration-200">
                                     <div class="bg-white rounded-lg shadow-lg p-6">
                                         <h2 class="text-2xl font-bold text-gray-800 mb-4">Podcasts</h2>
-                                        <p class="text-gray-600">Coming soon! Ashita Tolwani MD's medical podcasts will be available here.</p>
+                                        
+                                        <!-- Upload Area -->
+                                        <div class="upload-area p-6 mb-8 text-center">
+                                            <input type="file" id="podcastUpload" accept=".mp3,.wav,.m4a,.ogg" class="hidden">
+                                            <label for="podcastUpload" class="cursor-pointer">
+                                                <div class="text-gray-500 mb-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mx-auto mb-2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                                                    </svg>
+                                                    <p class="text-sm">Drag and drop your podcast file here or click to browse</p>
+                                                    <p class="text-xs text-gray-400 mt-1">Supported formats: MP3, WAV, M4A, OGG (Max 16MB)</p>
+                                                </div>
+                                            </label>
+                                        </div>
+
+                                        <!-- Podcast List -->
+                                        <div id="podcastList" class="space-y-4">
+                                            <!-- Podcasts will be loaded here -->
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <script>
+                        // Podcast Upload and Player Functionality
+                        document.getElementById('podcastUpload').addEventListener('change', async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+
+                            const formData = new FormData();
+                            formData.append('podcast', file);
+
+                            try {
+                                const response = await fetch('/upload_podcast', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+
+                                const data = await response.json();
+                                if (data.success) {
+                                    loadPodcasts();
+                                } else {
+                                    alert(data.error || 'Upload failed');
+                                }
+                            } catch (error) {
+                                console.error('Upload error:', error);
+                                alert('Failed to upload podcast');
+                            }
+                        });
+
+                        async function loadPodcasts() {
+                            try {
+                                const response = await fetch('/get_podcasts');
+                                const podcasts = await response.json();
+                                
+                                const podcastList = document.getElementById('podcastList');
+                                podcastList.innerHTML = '';
+
+                                podcasts.forEach(podcast => {
+                                    const podcastElement = document.createElement('div');
+                                    podcastElement.className = 'bg-gray-50 p-4 rounded-lg';
+                                    podcastElement.innerHTML = `
+                                        <p class="text-gray-700 font-medium mb-2">${podcast.filename}</p>
+                                        <audio controls class="podcast-player">
+                                            <source src="${podcast.path}" type="audio/mpeg">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    `;
+                                    podcastList.appendChild(podcastElement);
+                                });
+                            } catch (error) {
+                                console.error('Failed to load podcasts:', error);
+                            }
+                        }
+
+                        // Load podcasts when switching to podcast tab
+                        document.getElementById('podcastsTab').addEventListener('click', () => {
+                            loadPodcasts();
+                        });
+
+                        // Drag and drop functionality
+                        const uploadArea = document.querySelector('.upload-area');
+                        
+                        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                            uploadArea.addEventListener(eventName, preventDefaults, false);
+                        });
+
+                        function preventDefaults(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+
+                        ['dragenter', 'dragover'].forEach(eventName => {
+                            uploadArea.addEventListener(eventName, highlight, false);
+                        });
+
+                        ['dragleave', 'drop'].forEach(eventName => {
+                            uploadArea.addEventListener(eventName, unhighlight, false);
+                        });
+
+                        function highlight(e) {
+                            uploadArea.classList.add('border-blue-500', 'bg-blue-50');
+                        }
+
+                        function unhighlight(e) {
+                            uploadArea.classList.remove('border-blue-500', 'bg-blue-50');
+                        }
+
+                        uploadArea.addEventListener('drop', handleDrop, false);
+
+                        function handleDrop(e) {
+                            const dt = e.dataTransfer;
+                            const file = dt.files[0];
+                            
+                            const input = document.getElementById('podcastUpload');
+                            input.files = dt.files;
+                            input.dispatchEvent(new Event('change'));
+                        }
+
                         // Speech Recognition Setup
                         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                         let recognition = null;
@@ -329,6 +464,37 @@ Remember: While you can provide medical information and education, always remind
             error_msg = f"Error rendering template: {str(e)}\n{traceback.format_exc()}"
             logger.error(error_msg)
             return error_msg, 500
+
+    @app.route('/upload_podcast', methods=['POST'])
+    def upload_podcast():
+        if 'podcast' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['podcast']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return jsonify({
+                'success': True,
+                'filename': filename,
+                'path': f'/static/podcasts/{filename}'
+            })
+        
+        return jsonify({'error': 'Invalid file type'}), 400
+
+    @app.route('/get_podcasts')
+    def get_podcasts():
+        podcasts = []
+        for filename in os.listdir(app.config['UPLOAD_FOLDER']):
+            if allowed_file(filename):
+                podcasts.append({
+                    'filename': filename,
+                    'path': f'/static/podcasts/{filename}'
+                })
+        return jsonify(podcasts)
 
     @app.route('/chat', methods=['POST'])
     def chat():
