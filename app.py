@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import logging
 import sys
+import traceback
 
 # Configure logging
 logging.basicConfig(
@@ -21,12 +22,24 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 def create_app():
     # Initialize Flask app with explicit template and static folders
-    app = Flask(__name__,
-                template_folder=os.path.join(BASE_DIR, 'templates'),
-                static_folder=os.path.join(BASE_DIR, 'static'))
+    template_dir = os.path.join(BASE_DIR, 'templates')
+    static_dir = os.path.join(BASE_DIR, 'static')
     
-    logger.info(f"Template folder: {app.template_folder}")
-    logger.info(f"Static folder: {app.static_folder}")
+    logger.info(f"Current working directory: {os.getcwd()}")
+    logger.info(f"Base directory: {BASE_DIR}")
+    logger.info(f"Template directory: {template_dir}")
+    logger.info(f"Static directory: {static_dir}")
+    logger.info(f"Template directory exists: {os.path.exists(template_dir)}")
+    logger.info(f"Template index.html exists: {os.path.exists(os.path.join(template_dir, 'index.html'))}")
+    
+    if not os.path.exists(template_dir):
+        logger.error(f"Template directory not found: {template_dir}")
+        os.makedirs(template_dir, exist_ok=True)
+        logger.info("Created template directory")
+    
+    app = Flask(__name__,
+                template_folder=template_dir,
+                static_folder=static_dir)
     
     # Initialize OpenAI client
     api_key = os.getenv('OPENAI_API_KEY')
@@ -35,7 +48,8 @@ def create_app():
     try:
         client = OpenAI(api_key=api_key)
     except Exception as e:
-        logger.error(f"Error initializing OpenAI client: {str(e)}", exc_info=True)
+        logger.error(f"Error initializing OpenAI client: {str(e)}")
+        logger.error(traceback.format_exc())
         client = None
 
     SYSTEM_PROMPT = """You are Dr. Ashita Tolwani, MD, a distinguished ICU nephrologist and world-renowned expert in continuous renal replacement therapy (CRRT). You are a Professor of Medicine in the Division of Nephrology, with over two decades of experience in critical care nephrology.
@@ -62,10 +76,13 @@ Remember: While you can provide medical information and education, always remind
     def home():
         try:
             logger.info("Attempting to render index.html")
+            logger.info(f"Template folder in app: {app.template_folder}")
+            logger.info(f"Available templates: {os.listdir(app.template_folder)}")
             return render_template('index.html')
         except Exception as e:
-            logger.error(f"Error rendering template: {str(e)}", exc_info=True)
-            return f"Error loading the application. Please check server logs. Error: {str(e)}", 500
+            error_msg = f"Error rendering template: {str(e)}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            return f"Error loading the application. Error: {str(e)}\nStack trace: {traceback.format_exc()}", 500
 
     @app.route('/chat', methods=['POST'])
     def chat():
@@ -99,21 +116,25 @@ Remember: While you can provide medical information and education, always remind
                 })
 
             except OpenAIError as e:
-                logger.error(f"OpenAI API error: {str(e)}", exc_info=True)
+                logger.error(f"OpenAI API error: {str(e)}")
+                logger.error(traceback.format_exc())
                 return jsonify({"error": "Failed to generate response from AI model"}), 500
             except Exception as e:
-                logger.error(f"Unexpected error during OpenAI call: {str(e)}", exc_info=True)
+                logger.error(f"Unexpected error during OpenAI call: {str(e)}")
+                logger.error(traceback.format_exc())
                 return jsonify({"error": "An unexpected error occurred"}), 500
 
         except Exception as e:
-            logger.error(f"Server error: {str(e)}", exc_info=True)
+            logger.error(f"Server error: {str(e)}")
+            logger.error(traceback.format_exc())
             return jsonify({"error": "Internal server error"}), 500
 
     # Error handler for 500 errors
     @app.errorhandler(500)
     def internal_error(error):
-        logger.error(f"Internal Server Error: {str(error)}", exc_info=True)
-        return jsonify({"error": "Internal server error"}), 500
+        error_msg = f"Internal Server Error: {str(error)}\n{traceback.format_exc()}"
+        logger.error(error_msg)
+        return jsonify({"error": error_msg}), 500
 
     return app
 
