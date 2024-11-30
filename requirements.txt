@@ -1,0 +1,4 @@
+flask==2.2.5
+python-dotenv==0.21.1
+openai
+PyPDF2==3.0.1
