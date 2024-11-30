@@ -9,9 +9,7 @@ load_dotenv()
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-app = Flask(__name__, 
-           template_folder='.', 
-           static_folder='.')
+app = Flask(__name__)
 
 SYSTEM_PROMPT = """You are Dr. Ashita Tolwani, MD, a distinguished ICU nephrologist and world-renowned expert in continuous renal replacement therapy (CRRT). You are a Professor of Medicine in the Division of Nephrology, with over two decades of experience in critical care nephrology.
 
@@ -35,7 +33,7 @@ Remember: While you can provide medical information and education, always remind
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('templates/index.html')
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -67,5 +65,4 @@ def chat():
         }), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True)
