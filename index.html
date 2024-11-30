@@ -50,10 +50,35 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+        .tab-active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+        .tab-inactive {
+            color: #6B7280;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-inactive:hover {
+            color: #4B5563;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <!-- Navigation Tabs -->
+        <div class="border-b border-gray-200">
+            <div class="container mx-auto px-4">
+                <nav class="flex space-x-8">
+                    <button onclick="switchTab('chat')" class="tab-active px-4 py-4 text-sm font-medium transition-colors duration-200 ease-in-out">
+                        Chat
+                    </button>
+                    <button onclick="switchTab('podcasts')" class="tab-inactive px-4 py-4 text-sm font-medium transition-colors duration-200 ease-in-out">
+                        Podcasts
+                    </button>
+                </nav>
+            </div>
+        </div>
+
         <!-- Main Content -->
         <div class="container mx-auto px-4 py-8">
             <div class="flex flex-col lg:flex-row gap-8">
@@ -101,12 +126,8 @@
                 <div class="lg:w-2/3">
                     <div class="bg-white rounded-xl shadow-lg h-full">
                         <div id="chat-container" class="flex flex-col h-[calc(100vh-12rem)]">
-                            <!-- Chat History -->
-                            <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4">
-                                <!-- Messages will be dynamically added here -->
-                            </div>
                             <!-- Chat Input Section -->
-                            <form id="questionForm" class="mb-6">
+                            <form id="questionForm" class="p-4 border-b">
                                 <div class="flex flex-col gap-4">
                                     <textarea 
                                         id="questionInput" 
@@ -129,6 +150,11 @@
                                     </div>
                                 </div>
                             </form>
+
+                            <!-- Chat History -->
+                            <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4">
+                                <!-- Messages will be dynamically added here -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -136,6 +162,26 @@
         </div>
 
         <script>
+            let currentTab = 'chat';
+
+            function switchTab(tab) {
+                // Update current tab
+                currentTab = tab;
+                
+                // Update tab styles
+                document.querySelectorAll('nav button').forEach(button => {
+                    if (button.textContent.trim().toLowerCase() === tab) {
+                        button.classList.remove('tab-inactive');
+                        button.classList.add('tab-active');
+                    } else {
+                        button.classList.remove('tab-active');
+                        button.classList.add('tab-inactive');
+                    }
+                });
+
+                // TODO: Add logic to show/hide content based on selected tab
+            }
+
             function addMessageToChat(type, message) {
                 const chatMessages = document.getElementById('chat-history');
                 const messageDiv = document.createElement('div');
