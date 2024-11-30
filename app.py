@@ -126,6 +126,34 @@ Remember: While you can provide medical information and education, always remind
                             border-color: #3B82F6;
                             background-color: #F8FAFC;
                         }
+                        .chat-message {
+                            font-size: 1.125rem; /* 18px by default */
+                            line-height: 1.75;
+                            padding: 1rem 1.25rem;
+                            border-radius: 0.75rem;
+                            margin: 0.75rem 0;
+                        }
+                        /* Larger text on mobile */
+                        @media (max-width: 768px) {
+                            .chat-message {
+                                font-size: 1.25rem; /* 20px on mobile */
+                                padding: 1.25rem 1.5rem;
+                                margin: 1rem 0;
+                            }
+                            #questionInput {
+                                font-size: 1.25rem;
+                                padding: 1rem 1.25rem;
+                            }
+                            .welcome-text {
+                                font-size: 1.5rem !important;
+                            }
+                        }
+                        /* Even larger text on small mobile screens */
+                        @media (max-width: 480px) {
+                            .chat-message {
+                                font-size: 1.375rem; /* 22px on small mobile */
+                            }
+                        }
                     </style>
                 </head>
                 <body class="bg-gray-50">
@@ -172,7 +200,7 @@ Remember: While you can provide medical information and education, always remind
 
                                 <!-- Welcome Message -->
                                 <div class="text-center mb-8">
-                                    <p class="text-xl text-gray-700">Hello, I'm Ashita Tolwani MD's AI.<br/>What would you like to discuss today?</p>
+                                    <p class="welcome-text text-xl text-gray-700">Hello, I'm Ashita Tolwani MD's AI.<br/>What would you like to discuss today?</p>
                                 </div>
 
                                 <!-- Content Sections -->
@@ -535,7 +563,7 @@ Remember: While you can provide medical information and education, always remind
                         function addMessage(type, content) {
                             const messages = document.getElementById('chatMessages');
                             const div = document.createElement('div');
-                            div.className = `p-4 rounded-lg ${
+                            div.className = `chat-message ${
                                 type === 'user' 
                                     ? 'bg-blue-100 text-blue-900 ml-12' 
                                     : type === 'error' 
