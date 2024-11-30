@@ -116,6 +116,43 @@ Remember: While you can provide medical information and education, always remind
                             border-radius: 1rem;
                             margin: 1rem 0;
                         }
+                        .typing-indicator {
+                            display: flex;
+                            align-items: center;
+                            padding: 1.25rem 1.5rem;
+                            border-radius: 1rem;
+                            margin: 1rem 0;
+                            background: #f3f4f6;
+                            width: fit-content;
+                        }
+                        .typing-indicator span {
+                            width: 8px;
+                            height: 8px;
+                            margin: 0 2px;
+                            background-color: #6b7280;
+                            border-radius: 50%;
+                            display: inline-block;
+                            opacity: 0.4;
+                        }
+                        .typing-indicator span:nth-child(1) {
+                            animation: typing 1s infinite;
+                        }
+                        .typing-indicator span:nth-child(2) {
+                            animation: typing 1s infinite 0.2s;
+                        }
+                        .typing-indicator span:nth-child(3) {
+                            animation: typing 1s infinite 0.4s;
+                        }
+                        @keyframes typing {
+                            0%, 100% {
+                                transform: translateY(0);
+                                opacity: 0.4;
+                            }
+                            50% {
+                                transform: translateY(-4px);
+                                opacity: 0.8;
+                            }
+                        }
                         @media (max-width: 768px) {
                             .profile-image {
                                 width: 180px !important;
@@ -542,36 +579,6 @@ Remember: While you can provide medical information and education, always remind
                             }
                         }
 
-                        document.getElementById('questionForm').addEventListener('submit', async (e) => {
-                            e.preventDefault();
-                            const input = document.getElementById('questionInput');
-                            const message = input.value.trim();
-                            if (!message) return;
-                            
-                            // Add user message
-                            addMessage('user', message);
-                            input.value = '';
-                            
-                            try {
-                                const response = await fetch('/chat', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({ message }),
-                                });
-                                
-                                const data = await response.json();
-                                if (data.error) {
-                                    addMessage('error', data.error);
-                                } else {
-                                    addMessage('assistant', data.response);
-                                }
-                            } catch (error) {
-                                addMessage('error', 'Failed to get response');
-                            }
-                        });
-                        
                         function addMessage(type, content) {
                             const messages = document.getElementById('chatMessages');
                             const div = document.createElement('div');
@@ -586,6 +593,65 @@ Remember: While you can provide medical information and education, always remind
                             messages.appendChild(div);
                             messages.scrollTop = messages.scrollHeight;
                         }
+
+                        function addTypingIndicator() {
+                            const messages = document.getElementById('chatMessages');
+                            const indicator = document.createElement('div');
+                            indicator.className = 'typing-indicator mr-12';
+                            indicator.id = 'typingIndicator';
+                            indicator.innerHTML = `
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            `;
+                            messages.appendChild(indicator);
+                            messages.scrollTop = messages.scrollHeight;
+                        }
+
+                        function removeTypingIndicator() {
+                            const indicator = document.getElementById('typingIndicator');
+                            if (indicator) {
+                                indicator.remove();
+                            }
+                        }
+
+                        document.getElementById('questionForm').addEventListener('submit', async (e) => {
+                            e.preventDefault();
+                            const input = document.getElementById('questionInput');
+                            const message = input.value.trim();
+                            if (!message) return;
+                            
+                            // Add user message
+                            addMessage('user', message);
+                            input.value = '';
+
+                            // Add typing indicator
+                            addTypingIndicator();
+                            
+                            try {
+                                const response = await fetch('/chat', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ message }),
+                                });
+                                
+                                // Remove typing indicator
+                                removeTypingIndicator();
+
+                                const data = await response.json();
+                                if (data.error) {
+                                    addMessage('error', data.error);
+                                } else {
+                                    addMessage('assistant', data.response);
+                                }
+                            } catch (error) {
+                                // Remove typing indicator
+                                removeTypingIndicator();
+                                addMessage('error', 'Failed to get response');
+                            }
+                        });
                     </script>
                 </body>
                 </html>
