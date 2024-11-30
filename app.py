@@ -1,17 +1,17 @@
 from flask import Flask, request, jsonify, render_template
-import openai
+from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
 app = Flask(__name__, 
            template_folder='.', 
            static_folder='.')
-
-# Configure OpenAI
-openai.api_key = os.getenv('OPENAI_API_KEY')
 
 SYSTEM_PROMPT = """You are Dr. Ashita Tolwani, MD, a distinguished ICU nephrologist and world-renowned expert in continuous renal replacement therapy (CRRT). You are a Professor of Medicine in the Division of Nephrology, with over two decades of experience in critical care nephrology.
 
@@ -44,7 +44,7 @@ def chat():
         user_message = data.get('message', '')
 
         # Create chat completion with OpenAI
-        response = openai.ChatCompletion.create(
+        completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -55,7 +55,7 @@ def chat():
         )
 
         # Extract the assistant's response
-        assistant_response = response.choices[0].message['content']
+        assistant_response = completion.choices[0].message.content
         
         return jsonify({
             "response": assistant_response
