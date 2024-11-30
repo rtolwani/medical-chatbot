@@ -77,7 +77,7 @@ Remember: While you can provide medical information and education, always remind
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Dr. Tolwani's Medical Assistant</title>
+                    <title>Ashita Tolwani's Medical Assistant</title>
                     <script src="https://cdn.tailwindcss.com"></script>
                     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
                     <style>
@@ -116,11 +116,11 @@ Remember: While you can provide medical information and education, always remind
                                 <div class="flex flex-col md:flex-row items-center justify-center mb-8 space-y-4 md:space-y-0 md:space-x-8">
                                     <div class="w-48 h-48 rounded-full overflow-hidden shadow-lg">
                                         <img src="https://static.wixstatic.com/media/06422e_2ad5633eaef843d590f2b44f44a8968f~mv2.png/v1/fill/w_688,h_688,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/Ashita%20Tolwani%20MD.png" 
-                                             alt="Dr. Ashita Tolwani" 
+                                             alt="Ashita Tolwani" 
                                              class="w-full h-full object-cover">
                                     </div>
                                     <div class="text-center md:text-left">
-                                        <h1 class="text-3xl font-bold text-gray-800">Dr. Ashita Tolwani, MD</h1>
+                                        <h1 class="text-3xl font-bold text-gray-800">Ashita Tolwani, MD</h1>
                                         <p class="text-lg text-gray-600 mt-2">Professor of Medicine</p>
                                         <p class="text-gray-600">Division of Nephrology</p>
                                         <p class="text-gray-600">University of Alabama at Birmingham</p>
@@ -130,6 +130,11 @@ Remember: While you can provide medical information and education, always remind
                                             <span class="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mb-2">CRRT Expert</span>
                                         </div>
                                     </div>
+                                </div>
+
+                                <!-- Welcome Message -->
+                                <div class="text-center mb-8">
+                                    <p class="text-xl text-gray-700">Hello, I'm Ashita Tolwani MD's AI.<br/>What would you like to discuss today?</p>
                                 </div>
 
                                 <!-- Content Sections -->
@@ -155,7 +160,7 @@ Remember: While you can provide medical information and education, always remind
                                 <div id="podcastsSection" class="hidden transition-opacity duration-200">
                                     <div class="bg-white rounded-lg shadow-lg p-6">
                                         <h2 class="text-2xl font-bold text-gray-800 mb-4">Podcasts</h2>
-                                        <p class="text-gray-600">Coming soon! Dr. Tolwani's medical podcasts will be available here.</p>
+                                        <p class="text-gray-600">Coming soon! Ashita Tolwani MD's medical podcasts will be available here.</p>
                                     </div>
                                 </div>
                             </div>
