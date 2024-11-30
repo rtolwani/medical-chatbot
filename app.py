@@ -84,16 +84,38 @@ Remember: While you can provide medical information and education, always remind
                         body {
                             font-family: 'Inter', sans-serif;
                         }
+                        .tab-active {
+                            border-bottom: 2px solid #2563eb;
+                            color: #2563eb;
+                        }
                     </style>
                 </head>
                 <body class="bg-gray-50">
                     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+                        <!-- Navigation Tabs -->
+                        <div class="border-b border-gray-200 bg-white">
+                            <div class="container mx-auto px-4">
+                                <div class="flex justify-center space-x-8">
+                                    <button onclick="switchTab('chat')" 
+                                            class="tab-active px-4 py-4 text-sm font-medium transition-colors duration-200" 
+                                            id="chatTab">
+                                        Chat
+                                    </button>
+                                    <button onclick="switchTab('podcasts')" 
+                                            class="px-4 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors duration-200" 
+                                            id="podcastsTab">
+                                        Podcasts
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="container mx-auto px-4 py-8">
                             <div class="max-w-4xl mx-auto">
                                 <!-- Header -->
                                 <div class="flex flex-col md:flex-row items-center justify-center mb-8 space-y-4 md:space-y-0 md:space-x-8">
                                     <div class="w-48 h-48 rounded-full overflow-hidden shadow-lg">
-                                        <img src="https://medicine.uab.edu/wp-content/uploads/sites/4/2017/05/Ashita-Tolwani.jpg" 
+                                        <img src="https://static.wixstatic.com/media/06422e_2ad5633eaef843d590f2b44f44a8968f~mv2.png/v1/fill/w_688,h_688,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/Ashita%20Tolwani%20MD.png" 
                                              alt="Dr. Ashita Tolwani" 
                                              class="w-full h-full object-cover">
                                     </div>
@@ -110,26 +132,60 @@ Remember: While you can provide medical information and education, always remind
                                     </div>
                                 </div>
 
-                                <!-- Chat Interface -->
-                                <div class="bg-white rounded-lg shadow-lg p-6">
-                                    <div id="chatMessages" class="space-y-4 mb-6 max-h-[500px] overflow-y-auto"></div>
-                                    <form id="questionForm" class="mt-4">
-                                        <div class="flex space-x-4">
-                                            <input type="text" 
-                                                   id="questionInput" 
-                                                   class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                                   placeholder="Ask a medical question...">
-                                            <button type="submit" 
-                                                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200">
-                                                Send
-                                            </button>
-                                        </div>
-                                    </form>
+                                <!-- Content Sections -->
+                                <div id="chatSection" class="transition-opacity duration-200">
+                                    <div class="bg-white rounded-lg shadow-lg p-6">
+                                        <div id="chatMessages" class="space-y-4 mb-6 max-h-[500px] overflow-y-auto"></div>
+                                        <form id="questionForm" class="mt-4">
+                                            <div class="flex space-x-4">
+                                                <input type="text" 
+                                                       id="questionInput" 
+                                                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                                       placeholder="Ask a medical question...">
+                                                <button type="submit" 
+                                                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200">
+                                                    Send
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <!-- Podcasts Section -->
+                                <div id="podcastsSection" class="hidden transition-opacity duration-200">
+                                    <div class="bg-white rounded-lg shadow-lg p-6">
+                                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Podcasts</h2>
+                                        <p class="text-gray-600">Coming soon! Dr. Tolwani's medical podcasts will be available here.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <script>
+                        // Tab switching functionality
+                        function switchTab(tab) {
+                            const chatSection = document.getElementById('chatSection');
+                            const podcastsSection = document.getElementById('podcastsSection');
+                            const chatTab = document.getElementById('chatTab');
+                            const podcastsTab = document.getElementById('podcastsTab');
+
+                            if (tab === 'chat') {
+                                chatSection.classList.remove('hidden');
+                                podcastsSection.classList.add('hidden');
+                                chatTab.classList.add('tab-active');
+                                chatTab.classList.remove('text-gray-500');
+                                podcastsTab.classList.remove('tab-active');
+                                podcastsTab.classList.add('text-gray-500');
+                            } else {
+                                chatSection.classList.add('hidden');
+                                podcastsSection.classList.remove('hidden');
+                                podcastsTab.classList.add('tab-active');
+                                podcastsTab.classList.remove('text-gray-500');
+                                chatTab.classList.remove('tab-active');
+                                chatTab.classList.add('text-gray-500');
+                            }
+                        }
+
                         document.getElementById('questionForm').addEventListener('submit', async (e) => {
                             e.preventDefault();
                             const input = document.getElementById('questionInput');
