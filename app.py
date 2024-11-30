@@ -16,9 +16,17 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-# Initialize Flask app
+# Get the absolute path of the current directory
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
 def create_app():
-    app = Flask(__name__, template_folder='templates')
+    # Initialize Flask app with explicit template and static folders
+    app = Flask(__name__,
+                template_folder=os.path.join(BASE_DIR, 'templates'),
+                static_folder=os.path.join(BASE_DIR, 'static'))
+    
+    logger.info(f"Template folder: {app.template_folder}")
+    logger.info(f"Static folder: {app.static_folder}")
     
     # Initialize OpenAI client
     api_key = os.getenv('OPENAI_API_KEY')
@@ -27,7 +35,7 @@ def create_app():
     try:
         client = OpenAI(api_key=api_key)
     except Exception as e:
-        logger.error(f"Error initializing OpenAI client: {str(e)}")
+        logger.error(f"Error initializing OpenAI client: {str(e)}", exc_info=True)
         client = None
 
     SYSTEM_PROMPT = """You are Dr. Ashita Tolwani, MD, a distinguished ICU nephrologist and world-renowned expert in continuous renal replacement therapy (CRRT). You are a Professor of Medicine in the Division of Nephrology, with over two decades of experience in critical care nephrology.
@@ -53,10 +61,11 @@ Remember: While you can provide medical information and education, always remind
     @app.route('/')
     def home():
         try:
+            logger.info("Attempting to render index.html")
             return render_template('index.html')
         except Exception as e:
-            logger.error(f"Error rendering template: {str(e)}")
-            return "Error loading the application. Please check server logs.", 500
+            logger.error(f"Error rendering template: {str(e)}", exc_info=True)
+            return f"Error loading the application. Please check server logs. Error: {str(e)}", 500
 
     @app.route('/chat', methods=['POST'])
     def chat():
@@ -90,20 +99,20 @@ Remember: While you can provide medical information and education, always remind
                 })
 
             except OpenAIError as e:
-                logger.error(f"OpenAI API error: {str(e)}")
+                logger.error(f"OpenAI API error: {str(e)}", exc_info=True)
                 return jsonify({"error": "Failed to generate response from AI model"}), 500
             except Exception as e:
-                logger.error(f"Unexpected error during OpenAI call: {str(e)}")
+                logger.error(f"Unexpected error during OpenAI call: {str(e)}", exc_info=True)
                 return jsonify({"error": "An unexpected error occurred"}), 500
 
         except Exception as e:
-            logger.error(f"Server error: {str(e)}")
+            logger.error(f"Server error: {str(e)}", exc_info=True)
             return jsonify({"error": "Internal server error"}), 500
 
     # Error handler for 500 errors
     @app.errorhandler(500)
     def internal_error(error):
-        logger.error(f"Internal Server Error: {str(error)}")
+        logger.error(f"Internal Server Error: {str(error)}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
 
     return app
