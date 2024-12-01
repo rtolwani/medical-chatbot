@@ -201,6 +201,11 @@ Remember: While you can provide medical information and education, always remind
                                 padding: 0.75rem 1.25rem !important;
                             }
                         }
+                        .welcome-text {
+                            font-size: 1.125rem;
+                            line-height: 1.5;
+                            padding: 1rem 1.25rem;
+                        }
                     </style>
                 </head>
                 <body class="bg-gray-50">
@@ -234,7 +239,7 @@ Remember: While you can provide medical information and education, always remind
                                     </div>
                                     <div class="text-center md:text-left">
                                         <h1 class="header-title text-4xl font-bold text-gray-800">Ashita Tolwani, MD</h1>
-                                        <p class="header-subtitle text-2xl text-gray-600 mt-2">Professor of Medicine</p>
+                                        <p class="header-subtitle text-2xl text-gray-600 mt-2">Edwin A. Rutsky Professor of Medicine</p>
                                         <p class="header-text text-xl text-gray-600">Division of Nephrology</p>
                                         <p class="header-text text-xl text-gray-600">University of Alabama at Birmingham</p>
                                         <div class="mt-4 flex flex-wrap justify-center md:justify-start gap-2">
@@ -247,7 +252,7 @@ Remember: While you can provide medical information and education, always remind
 
                                 <!-- Welcome Message -->
                                 <div class="text-center">
-                                    <p class="welcome-text text-2xl text-gray-700">Hello, I'm Ashita Tolwani MD's AI.<br/>What would you like to discuss today?</p>
+                                    <p class="welcome-text text-gray-700">Hello, I'm Ashita Tolwani MD's AI.<br/>What would you like to discuss today?</p>
                                 </div>
 
                                 <!-- Content Sections -->
