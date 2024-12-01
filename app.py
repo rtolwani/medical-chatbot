@@ -749,7 +749,7 @@ Remember: While you can provide medical information and education, always remind
 
             try:
                 completion = client.chat.completions.create(
-                    model="gpt-4-0125-preview",
+                    model="gpt-4o",
                     messages=[
                         {"role": "system", "content": SYSTEM_PROMPT + "\n\nFormat your responses with clear sections and proper spacing. Use clean formatting with line breaks between paragraphs. Use plain text without any special characters or markdown formatting. For sections, use plain text headers without ###. For lists, use simple hyphens (-) or numbers (1.). Add empty lines between all paragraphs and sections for readability."},
                         {"role": "user", "content": user_message}
