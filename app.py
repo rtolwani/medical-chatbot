@@ -709,9 +709,9 @@ Remember: While you can provide medical information and education, always remind
 
             try:
                 completion = client.chat.completions.create(
-                    model="gpt-4o",
+                    model="gpt-4-0125-preview",
                     messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "system", "content": SYSTEM_PROMPT + "\n\nFormat your responses with clear sections and proper spacing. Use clean formatting with line breaks between paragraphs. Use plain text without asterisks (*). For lists, use proper indentation with hyphens (-) or numbers (1.). Add empty lines between sections for readability."},
                         {"role": "user", "content": user_message}
                     ],
                     temperature=0.7,
@@ -719,14 +719,33 @@ Remember: While you can provide medical information and education, always remind
                 )
 
                 assistant_response = completion.choices[0].message.content
-                # Add line breaks between paragraphs if they don't exist
-                formatted_response = assistant_response.replace('. ', '.\n\n').replace('? ', '?\n\n').replace('! ', '!\n\n')
-                # Remove any excessive newlines (more than 2)
-                formatted_response = '\n\n'.join(filter(None, formatted_response.split('\n')))
                 
-                return jsonify({
-                    "response": formatted_response
-                })
+                # Format the response
+                # Remove any asterisks
+                formatted_response = assistant_response.replace('*', '')
+                
+                # Ensure proper spacing for sections
+                formatted_response = formatted_response.replace('\n#', '\n\n#')
+                
+                # Add spacing after bullet points
+                formatted_response = formatted_response.replace('\n-', '\n\n-')
+                
+                # Add spacing after numbered points
+                for i in range(1, 10):
+                    formatted_response = formatted_response.replace(f'\n{i}.', f'\n\n{i}.')
+                
+                # Ensure proper paragraph spacing
+                formatted_response = formatted_response.replace('. ', '.\n\n')
+                
+                # Clean up excessive newlines
+                while '\n\n\n' in formatted_response:
+                    formatted_response = formatted_response.replace('\n\n\n', '\n\n')
+                
+                # Ensure consistent list formatting
+                formatted_response = formatted_response.replace(':\n\n-', ':\n-')
+                formatted_response = formatted_response.replace(':\n\n1.', ':\n1.')
+
+                return jsonify({"response": formatted_response})
 
             except OpenAIError as e:
                 logger.error(f"OpenAI API error: {str(e)}")
