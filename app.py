@@ -709,7 +709,7 @@ Remember: While you can provide medical information and education, always remind
 
             try:
                 completion = client.chat.completions.create(
-                    model="gpt-4",
+                    model="gpt-4-0125",
                     messages=[
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": user_message}
