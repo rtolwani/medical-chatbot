@@ -715,14 +715,17 @@ Remember: While you can provide medical information and education, always remind
                         {"role": "user", "content": user_message}
                     ],
                     temperature=0.7,
-                    max_tokens=500
+                    max_tokens=2000
                 )
 
                 assistant_response = completion.choices[0].message.content
-                logger.info("Successfully generated response")
+                # Add line breaks between paragraphs if they don't exist
+                formatted_response = assistant_response.replace('. ', '.\n\n').replace('? ', '?\n\n').replace('! ', '!\n\n')
+                # Remove any excessive newlines (more than 2)
+                formatted_response = '\n\n'.join(filter(None, formatted_response.split('\n')))
                 
                 return jsonify({
-                    "response": assistant_response
+                    "response": formatted_response
                 })
 
             except OpenAIError as e:
