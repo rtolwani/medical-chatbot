@@ -711,7 +711,7 @@ Remember: While you can provide medical information and education, always remind
                 completion = client.chat.completions.create(
                     model="gpt-4-0125-preview",
                     messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT + "\n\nFormat your responses with clear sections and proper spacing. Use clean formatting with line breaks between paragraphs. Use plain text without asterisks (*). For lists, use proper indentation with hyphens (-) or numbers (1.). Add empty lines between sections for readability."},
+                        {"role": "system", "content": SYSTEM_PROMPT + "\n\nFormat your responses with clear sections and proper spacing. Use clean formatting with line breaks between paragraphs. Use plain text without any special characters or markdown formatting. For sections, use plain text headers without ###. For lists, use simple hyphens (-) or numbers (1.). Add empty lines between all paragraphs and sections for readability."},
                         {"role": "user", "content": user_message}
                     ],
                     temperature=0.7,
@@ -721,44 +721,42 @@ Remember: While you can provide medical information and education, always remind
                 assistant_response = completion.choices[0].message.content
                 
                 # Format the response
-                # Remove any asterisks
-                formatted_response = assistant_response.replace('*', '')
+                # Remove any asterisks and markdown formatting
+                formatted_response = assistant_response.replace('*', '').replace('###', '')
                 
-                # Split into sentences and add proper paragraph breaks
-                sentences = formatted_response.split('. ')
-                formatted_response = '.\n\n'.join(sentences)
+                # Split into paragraphs and ensure proper spacing
+                paragraphs = [p.strip() for p in formatted_response.split('\n') if p.strip()]
+                formatted_response = '\n\n'.join(paragraphs)
                 
-                # Ensure proper spacing for sections
-                formatted_response = formatted_response.replace('\n#', '\n\n#')
+                # Add extra spacing after periods that end sentences
+                formatted_response = formatted_response.replace('. ', '.\n\n')
                 
-                # Add spacing after bullet points
-                formatted_response = formatted_response.replace('\n-', '\n\n-')
+                # Add spacing after bullet points while preserving list structure
+                lines = formatted_response.split('\n')
+                formatted_lines = []
+                for i, line in enumerate(lines):
+                    line = line.strip()
+                    if line:
+                        if line.startswith('-') or line.startswith('1.') or line.startswith('2.'):
+                            # Don't add extra space before list items
+                            formatted_lines.append(line)
+                        else:
+                            # Add extra space before non-list items
+                            if i > 0 and not lines[i-1].strip().startswith('-') and not any(lines[i-1].strip().startswith(str(n) + '.') for n in range(1, 10)):
+                                formatted_lines.append('')
+                            formatted_lines.append(line)
                 
-                # Add spacing after numbered points
-                for i in range(1, 10):
-                    formatted_response = formatted_response.replace(f'\n{i}.', f'\n\n{i}.')
+                formatted_response = '\n'.join(formatted_lines)
                 
-                # Fix spacing around question marks and exclamation points
-                formatted_response = formatted_response.replace('? ', '?\n\n')
-                formatted_response = formatted_response.replace('! ', '!\n\n')
-                
-                # Clean up excessive newlines
+                # Clean up any excessive newlines
                 while '\n\n\n' in formatted_response:
                     formatted_response = formatted_response.replace('\n\n\n', '\n\n')
                 
-                # Ensure consistent list formatting
-                formatted_response = formatted_response.replace(':\n\n-', ':\n-')
-                formatted_response = formatted_response.replace(':\n\n1.', ':\n1.')
+                # Ensure sections are properly spaced
+                sections = ['Key Features', 'Indications', 'Types', 'How']
+                for section in sections:
+                    formatted_response = formatted_response.replace(f'\n{section}', f'\n\n{section}')
                 
-                # Add extra line break before sections
-                formatted_response = formatted_response.replace('\nKey Features', '\n\nKey Features')
-                formatted_response = formatted_response.replace('\nIndications', '\n\nIndications')
-                formatted_response = formatted_response.replace('\nTypes', '\n\nTypes')
-                formatted_response = formatted_response.replace('\nHow', '\n\nHow')
-                
-                # Fix any remaining spacing issues
-                formatted_response = '\n\n'.join(line.strip() for line in formatted_response.split('\n') if line.strip())
-
                 return jsonify({"response": formatted_response})
 
             except OpenAIError as e:
