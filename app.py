@@ -1,15 +1,16 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from openai import OpenAI, OpenAIError
 import os
 from dotenv import load_dotenv
 import logging
-import sys
-import traceback
+import glob
+import PyPDF2
+import re
 from werkzeug.utils import secure_filename
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     stream=sys.stdout
 )
@@ -17,6 +18,66 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
+
+def load_pdf_references():
+    """Load and cache content from all PDFs in the references folder"""
+    pdf_dir = os.path.join('static', 'pdf_references')
+    reference_content = []
+    
+    # Create directory if it doesn't exist
+    if not os.path.exists(pdf_dir):
+        os.makedirs(pdf_dir)
+    
+    for pdf_file in glob.glob(os.path.join(pdf_dir, '*.pdf')):
+        if pdf_file not in pdf_content_cache:
+            try:
+                with open(pdf_file, 'rb') as file:
+                    pdf_reader = PyPDF2.PdfReader(file)
+                    content = []
+                    for page in pdf_reader.pages:
+                        content.append(page.extract_text())
+                    pdf_content_cache[pdf_file] = ' '.join(content)
+                logger.info(f"Loaded PDF reference: {pdf_file}")
+            except Exception as e:
+                logger.error(f"Error loading PDF {pdf_file}: {str(e)}")
+                continue
+        
+        reference_content.append(pdf_content_cache[pdf_file])
+    
+    return ' '.join(reference_content)
+
+def get_relevant_context(query, reference_text, max_chars=6000):
+    """Extract relevant context from reference material based on the query"""
+    # Split reference text into sentences
+    sentences = re.split(r'[.!?]+', reference_text)
+    relevant_sentences = []
+    
+    # Convert query to lowercase for case-insensitive matching
+    query_terms = query.lower().split()
+    
+    # Score each sentence based on query term matches
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if not sentence:
+            continue
+        
+        score = sum(1 for term in query_terms if term in sentence.lower())
+        if score > 0:
+            relevant_sentences.append((score, sentence))
+    
+    # Sort by relevance score
+    relevant_sentences.sort(reverse=True)
+    
+    # Combine sentences up to max_chars
+    context = ""
+    char_count = 0
+    for _, sentence in relevant_sentences:
+        if char_count + len(sentence) > max_chars:
+            break
+        context += sentence + ". "
+        char_count += len(sentence) + 2
+    
+    return context.strip()
 
 def create_app():
     # Initialize Flask app
@@ -70,6 +131,11 @@ When responding:
 7. Emphasize patient safety and best practices in critical care
 
 Remember: While you can provide medical information and education, always remind users that your responses should not replace direct medical consultation, especially for urgent or emergency situations."""
+
+    pdf_content_cache = {}
+
+    # Load PDF references on startup
+    reference_content = load_pdf_references()
 
     @app.route('/')
     def home():
@@ -756,10 +822,18 @@ Remember: While you can provide medical information and education, always remind
             logger.info(f"Received message: {user_message}")
 
             try:
+                # Get relevant context from PDF references
+                context = get_relevant_context(user_message, reference_content)
+                
+                # Create system message with context
+                system_message = SYSTEM_PROMPT
+                if context:
+                    system_message += f"\n\nRelevant reference material:\n{context}"
+                
                 completion = client.chat.completions.create(
                     model="gpt-4-0125-preview",
                     messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT + "\n\nFormat your responses with clear sections and proper spacing. Use clean formatting with line breaks between paragraphs. Use plain text without any special characters or markdown formatting. For sections, use plain text headers without ###. For lists, use simple hyphens (-) or numbers (1.). Add empty lines between all paragraphs and sections for readability."},
+                        {"role": "system", "content": system_message},
                         {"role": "user", "content": user_message}
                     ],
                     temperature=0.7,
