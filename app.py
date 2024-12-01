@@ -177,7 +177,7 @@ Remember: While you can provide medical information and education, always remind
                                 font-size: 1.25rem !important;
                             }
                             .welcome-text {
-                                font-size: 1.75rem !important;
+                                font-size: 1.125rem !important;
                                 line-height: 1.4 !important;
                                 margin: 2rem 0 !important;
                             }
@@ -193,7 +193,7 @@ Remember: While you can provide medical information and education, always remind
                                 height: 2rem !important;
                             }
                             .tab-button {
-                                font-size: 1.25rem !important;
+                                font-size: 1rem !important;
                                 padding: 1.25rem 2rem !important;
                             }
                             .expertise-tag {
@@ -202,9 +202,37 @@ Remember: While you can provide medical information and education, always remind
                             }
                         }
                         .welcome-text {
-                            font-size: 1.125rem;
-                            line-height: 1.5;
-                            padding: 1rem 1.25rem;
+                            font-size: 1rem;
+                            line-height: 1.4;
+                            padding: 0.75rem 1rem;
+                            color: #374151;
+                        }
+                        .tab-button {
+                            font-size: 0.875rem;
+                            padding: 0.5rem 1rem;
+                        }
+                        .bio-content {
+                            font-size: 1rem;
+                            line-height: 1.6;
+                            padding: 1.5rem;
+                            max-width: 800px;
+                            margin: 0 auto;
+                            text-align: left;
+                        }
+                        .bio-content p {
+                            margin-bottom: 1.5rem;
+                        }
+                        @media (max-width: 768px) {
+                            .welcome-text {
+                                font-size: 1.125rem;
+                            }
+                            .tab-button {
+                                font-size: 1rem;
+                            }
+                            .bio-content {
+                                font-size: 1.125rem;
+                                padding: 1rem;
+                            }
                         }
                     </style>
                 </head>
@@ -214,15 +242,20 @@ Remember: While you can provide medical information and education, always remind
                         <div class="border-b border-gray-200 bg-white">
                             <div class="container mx-auto px-4">
                                 <div class="flex justify-center space-x-8">
-                                    <button onclick="switchTab('chat')" 
-                                            class="tab-button tab-active px-4 py-4 text-base font-medium transition-colors duration-200" 
+                                    <button onclick="showTab('chat')" 
+                                            class="tab-button bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors" 
                                             id="chatTab">
                                         Chat
                                     </button>
-                                    <button onclick="switchTab('podcasts')" 
-                                            class="tab-button px-4 py-4 text-base font-medium text-gray-500 hover:text-gray-700 transition-colors duration-200" 
-                                            id="podcastsTab">
-                                        Podcasts
+                                    <button onclick="showTab('podcast')" 
+                                            class="tab-button bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors" 
+                                            id="podcastTab">
+                                        Podcast
+                                    </button>
+                                    <button onclick="showTab('bio')" 
+                                            class="tab-button bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors" 
+                                            id="bioTab">
+                                        Bio
                                     </button>
                                 </div>
                             </div>
@@ -283,7 +316,7 @@ Remember: While you can provide medical information and education, always remind
                                 </div>
 
                                 <!-- Podcasts Section -->
-                                <div id="podcastsSection" class="hidden transition-opacity duration-200">
+                                <div id="podcastSection" class="hidden transition-opacity duration-200">
                                     <div class="bg-white rounded-lg shadow-lg p-6">
                                         <h2 class="text-2xl font-bold text-gray-800 mb-4">Podcasts</h2>
                                         
@@ -305,6 +338,19 @@ Remember: While you can provide medical information and education, always remind
                                         <div id="podcastList" class="space-y-4">
                                             <!-- Podcasts will be loaded here -->
                                         </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bio Section -->
+                                <div id="bioSection" class="hidden">
+                                    <div class="bio-content">
+                                        <h2 class="text-2xl font-bold mb-4">Ashita Tolwani MD, MSc</h2>
+                                        
+                                        <p>Dr. Ashita Tolwani is a Professor of Medicine at the University of Alabama at Birmingham (UAB), where she holds the DCI Edwin A. Rutsky Endowed Chair in Nephrology. She earned a Master of Science in Clinical Epidemiology from the Harvard School of Public Health and completed a combined fellowship in nephrology and critical care at UAB, where she has since remained as faculty. Dr. Tolwani serves as Co-Director for Critical Nephrology and founded the UAB Continuous Renal Replacement Therapy (CRRT) Academy, a premier two-day course offering comprehensive training through simulations, along with pre- and post-assessments. The Academy has become an integral part of fellowship training, with many programs requiring annual participation. Attendees hail from across the United States and internationally, with participants from countries including Mexico, the Middle East, and Asia. In addition to her work at UAB, Dr. Tolwani conducts CRRT workshops around the globe.</p>
+                                        
+                                        <p>Her dedication to teaching and excellence in nephrology has been recognized with numerous institutional and national awards, including the 2016 UAB President's Award for Teaching in the School of Medicine, the 2020 American Society of Nephrology (ASN) Robert G. Narins Award, and the 2023 Vicenza International Critical Care Nephrology Award. She has also been honored by the National Academy of Inventors with the 2023 EnterpreHer Award and was inducted as a member of UAB's Chapter in 2024. Additionally, she received the International AKI and CRRT "Translating Discoveries to Management in AKI" Award in 2024.</p>
+                                        
+                                        <p>Dr. Tolwani's research focuses on acute kidney injury, ICU nephrology, and CRRT, particularly in citrate anticoagulation. She is the patent holder for a 0.5% citrate replacement solution for CRRT, now used in multiple countries.</p>
                                     </div>
                                 </div>
                             </div>
@@ -515,7 +561,7 @@ Remember: While you can provide medical information and education, always remind
                         }
 
                         // Load podcasts when switching to podcast tab
-                        document.getElementById('podcastsTab').addEventListener('click', () => {
+                        document.getElementById('podcastTab').addEventListener('click', () => {
                             loadPodcasts();
                         });
 
@@ -559,27 +605,26 @@ Remember: While you can provide medical information and education, always remind
                         }
 
                         // Tab switching functionality
-                        function switchTab(tab) {
-                            const chatSection = document.getElementById('chatSection');
-                            const podcastsSection = document.getElementById('podcastsSection');
-                            const chatTab = document.getElementById('chatTab');
-                            const podcastsTab = document.getElementById('podcastsTab');
-
-                            if (tab === 'chat') {
-                                chatSection.classList.remove('hidden');
-                                podcastsSection.classList.add('hidden');
-                                chatTab.classList.add('tab-active');
-                                chatTab.classList.remove('text-gray-500');
-                                podcastsTab.classList.remove('tab-active');
-                                podcastsTab.classList.add('text-gray-500');
-                            } else {
-                                chatSection.classList.add('hidden');
-                                podcastsSection.classList.remove('hidden');
-                                podcastsTab.classList.add('tab-active');
-                                podcastsTab.classList.remove('text-gray-500');
-                                chatTab.classList.remove('tab-active');
-                                chatTab.classList.add('text-gray-500');
-                            }
+                        function showTab(tabName) {
+                            // Hide all sections
+                            document.getElementById('chatSection').classList.add('hidden');
+                            document.getElementById('podcastSection').classList.add('hidden');
+                            document.getElementById('bioSection').classList.add('hidden');
+                            
+                            // Show selected section
+                            document.getElementById(tabName + 'Section').classList.remove('hidden');
+                            
+                            // Update tab buttons
+                            const tabs = document.querySelectorAll('.tab-button');
+                            tabs.forEach(tab => {
+                                if (tab.textContent.toLowerCase() === tabName) {
+                                    tab.classList.remove('bg-gray-500');
+                                    tab.classList.add('bg-blue-500');
+                                } else {
+                                    tab.classList.remove('bg-blue-500');
+                                    tab.classList.add('bg-gray-500');
+                                }
+                            });
                         }
 
                         function addMessage(type, content) {
