@@ -724,6 +724,10 @@ Remember: While you can provide medical information and education, always remind
                 # Remove any asterisks
                 formatted_response = assistant_response.replace('*', '')
                 
+                # Split into sentences and add proper paragraph breaks
+                sentences = formatted_response.split('. ')
+                formatted_response = '.\n\n'.join(sentences)
+                
                 # Ensure proper spacing for sections
                 formatted_response = formatted_response.replace('\n#', '\n\n#')
                 
@@ -734,8 +738,9 @@ Remember: While you can provide medical information and education, always remind
                 for i in range(1, 10):
                     formatted_response = formatted_response.replace(f'\n{i}.', f'\n\n{i}.')
                 
-                # Ensure proper paragraph spacing
-                formatted_response = formatted_response.replace('. ', '.\n\n')
+                # Fix spacing around question marks and exclamation points
+                formatted_response = formatted_response.replace('? ', '?\n\n')
+                formatted_response = formatted_response.replace('! ', '!\n\n')
                 
                 # Clean up excessive newlines
                 while '\n\n\n' in formatted_response:
@@ -744,6 +749,15 @@ Remember: While you can provide medical information and education, always remind
                 # Ensure consistent list formatting
                 formatted_response = formatted_response.replace(':\n\n-', ':\n-')
                 formatted_response = formatted_response.replace(':\n\n1.', ':\n1.')
+                
+                # Add extra line break before sections
+                formatted_response = formatted_response.replace('\nKey Features', '\n\nKey Features')
+                formatted_response = formatted_response.replace('\nIndications', '\n\nIndications')
+                formatted_response = formatted_response.replace('\nTypes', '\n\nTypes')
+                formatted_response = formatted_response.replace('\nHow', '\n\nHow')
+                
+                # Fix any remaining spacing issues
+                formatted_response = '\n\n'.join(line.strip() for line in formatted_response.split('\n') if line.strip())
 
                 return jsonify({"response": formatted_response})
 
