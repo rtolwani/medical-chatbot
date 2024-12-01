@@ -110,11 +110,11 @@ Remember: While you can provide medical information and education, always remind
                             50% { opacity: .5; }
                         }
                         .chat-message {
-                            font-size: 1.25rem;
-                            line-height: 1.75;
-                            padding: 1.25rem 1.5rem;
-                            border-radius: 1rem;
-                            margin: 1rem 0;
+                            font-size: 1rem;
+                            line-height: 1.5;
+                            padding: 1rem 1.25rem;
+                            border-radius: 0.75rem;
+                            margin: 0.75rem 0;
                         }
                         .typing-indicator {
                             display: flex;
@@ -153,10 +153,19 @@ Remember: While you can provide medical information and education, always remind
                                 opacity: 0.8;
                             }
                         }
+                        #questionInput {
+                            font-size: 1rem;
+                            padding: 0.75rem 1rem;
+                        }
                         @media (max-width: 768px) {
-                            .profile-image {
-                                width: 180px !important;
-                                height: 180px !important;
+                            .chat-message {
+                                font-size: 1.25rem;
+                                line-height: 1.75;
+                                padding: 1.25rem 1.5rem;
+                            }
+                            #questionInput {
+                                font-size: 1.25rem;
+                                padding: 1rem 1.25rem;
                             }
                             .header-title {
                                 font-size: 2rem !important;
@@ -171,17 +180,6 @@ Remember: While you can provide medical information and education, always remind
                                 font-size: 1.75rem !important;
                                 line-height: 1.4 !important;
                                 margin: 2rem 0 !important;
-                            }
-                            .chat-message {
-                                font-size: 1.5rem;
-                                padding: 1.5rem;
-                                margin: 1.25rem 0;
-                                line-height: 1.6;
-                            }
-                            #questionInput {
-                                font-size: 1.5rem !important;
-                                padding: 1.25rem !important;
-                                height: auto !important;
                             }
                             .send-button {
                                 padding: 1.25rem 2rem !important;
