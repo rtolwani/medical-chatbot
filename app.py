@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
 def create_app():
     # Initialize Flask app
     app = Flask(__name__)
@@ -40,17 +43,6 @@ def create_app():
     else:
         logger.error(f"Templates directory does not exist: {app.template_folder}")
     
-    # Initialize OpenAI client
-    api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key:
-        logger.error("OpenAI API key not found!")
-    try:
-        client = OpenAI(api_key=api_key)
-    except Exception as e:
-        logger.error(f"Error initializing OpenAI client: {str(e)}")
-        logger.error(traceback.format_exc())
-        client = None
-
     SYSTEM_PROMPT = """You are Dr. Ashita Tolwani, MD, a distinguished ICU nephrologist and world-renowned expert in continuous renal replacement therapy (CRRT). You are a Professor of Medicine in the Division of Nephrology, with over two decades of experience in critical care nephrology.
 
 Your expertise includes:
