@@ -312,23 +312,36 @@ Remember: While you can provide medical information and education, always remind
                                     <div class="bg-white rounded-lg shadow-lg p-6">
                                         <h2 class="text-2xl font-bold text-gray-800 mb-4">Podcasts</h2>
                                         
-                                        <!-- Upload Area -->
-                                        <div class="upload-area p-6 mb-8 text-center">
-                                            <input type="file" id="podcastUpload" accept=".mp3,.wav,.m4a,.ogg" class="hidden">
-                                            <label for="podcastUpload" class="cursor-pointer">
-                                                <div class="text-gray-500 mb-2">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mx-auto mb-2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
-                                                    </svg>
-                                                    <p class="text-sm">Drag and drop your podcast file here or click to browse</p>
-                                                    <p class="text-xs text-gray-400 mt-1">Supported formats: MP3, WAV, M4A, OGG (Max 16MB)</p>
-                                                </div>
-                                            </label>
+                                        <div class="space-y-6">
+                                            <!-- Spotify Podcast -->
+                                            <div class="podcast-item">
+                                                <iframe style="border-radius:12px" 
+                                                        src="https://open.spotify.com/embed/episode/6QBjrx18C3guPTFVoW1Hrc?utm_source=generator" 
+                                                        width="100%" 
+                                                        height="352" 
+                                                        frameBorder="0" 
+                                                        allowfullscreen="" 
+                                                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                                                        loading="lazy">
+                                                </iframe>
+                                            </div>
+
+                                            <!-- Future Podcasts Placeholder -->
+                                            <div class="text-gray-600 italic text-center mt-4">
+                                                More podcasts coming soon!
+                                            </div>
                                         </div>
 
-                                        <!-- Podcast List -->
-                                        <div id="podcastList" class="space-y-4">
-                                            <!-- Podcasts will be loaded here -->
+                                        <!-- Follow on Spotify Button -->
+                                        <div class="mt-6 text-center">
+                                            <a href="https://open.spotify.com/show/YOUR_SHOW_ID" 
+                                               target="_blank" 
+                                               class="inline-flex items-center px-6 py-3 bg-[#1DB954] text-white font-semibold rounded-full hover:bg-[#1ed760] transition-colors">
+                                                <svg class="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                                                </svg>
+                                                Follow on Spotify
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -749,7 +762,7 @@ Remember: While you can provide medical information and education, always remind
 
             try:
                 completion = client.chat.completions.create(
-                    model="gpt-4o",
+                    model="gpt-4-0125-preview",
                     messages=[
                         {"role": "system", "content": SYSTEM_PROMPT + "\n\nFormat your responses with clear sections and proper spacing. Use clean formatting with line breaks between paragraphs. Use plain text without any special characters or markdown formatting. For sections, use plain text headers without ###. For lists, use simple hyphens (-) or numbers (1.). Add empty lines between all paragraphs and sections for readability."},
                         {"role": "user", "content": user_message}
