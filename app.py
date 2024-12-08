@@ -315,13 +315,14 @@ Remember: While you can provide medical information and education, always remind
                                         <div class="space-y-6">
                                             <!-- Spotify Podcast -->
                                             <div class="podcast-item max-w-xl mx-auto">
-                                                <iframe style="border-radius:12px" 
-                                                        src="https://open.spotify.com/embed/episode/6QBjrx18C3guPTFVoW1Hrc" 
-                                                        width="100%" 
-                                                        height="152" 
-                                                        frameborder="0" 
-                                                        allowfullscreen 
-                                                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture; web-share">
+                                                <iframe 
+                                                    style="border-radius:12px" 
+                                                    src="https://open.spotify.com/embed/episode/6QBjrx18C3guPTFVoW1Hrc?utm_source=generator&theme=0&t=0"
+                                                    width="100%" 
+                                                    height="175"
+                                                    frameBorder="0" 
+                                                    allowfullscreen="" 
+                                                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
                                                 </iframe>
                                             </div>
 
