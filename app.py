@@ -282,90 +282,165 @@ Remember: While you can provide medical information and education, always remind
 
                                 <!-- Content Sections -->
                                 <div id="chatSection" class="transition-opacity duration-200">
-                                    <div class="bg-white rounded-lg shadow-lg p-6">
-                                        <div id="chatMessages" class="space-y-4 mb-6 max-h-[500px] overflow-y-auto"></div>
-                                        <form id="questionForm" class="mt-4">
-                                            <div class="flex space-x-4">
-                                                <input type="text" 
-                                                       id="questionInput" 
-                                                       class="flex-1 p-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                                       placeholder="Ask a medical question...">
-                                                <button type="button"
-                                                        id="micButton"
-                                                        class="mic-button p-4 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                        title="Click to speak">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                                    <div class="bg-white h-[calc(100vh-200px)] flex flex-col">
+                                        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                                            <!-- Welcome message will be added here -->
+                                        </div>
+                                        
+                                        <!-- Fixed input area at bottom -->
+                                        <div class="border-t border-gray-200 p-4 bg-white">
+                                            <form id="questionForm" class="flex items-center gap-2">
+                                                <div class="relative flex-1">
+                                                    <input type="text" 
+                                                           id="questionInput" 
+                                                           class="w-full p-4 pr-12 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                           placeholder="Send a message...">
+                                                    <button type="button"
+                                                            id="micButton"
+                                                            class="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+                                                            title="Click to speak">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                                <button type="submit" 
+                                                        class="send-button bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-xl transition-colors">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                                                     </svg>
                                                 </button>
-                                                <button type="submit" 
-                                                        class="send-button bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium transition-colors duration-200 text-lg">
-                                                    Send
-                                                </button>
-                                            </div>
-                                        </form>
+                                            </form>
+                                        </div>
                                     </div>
 
-                                    <script>
-                                        document.getElementById('questionForm').addEventListener('submit', async function(e) {
-                                            e.preventDefault();
-                                            
-                                            const questionInput = document.getElementById('questionInput');
-                                            const userMessage = questionInput.value.trim();
-                                            
-                                            if (!userMessage) return;
-                                            
-                                            // Disable input and button while processing
-                                            const submitButton = this.querySelector('button[type="submit"]');
-                                            questionInput.disabled = true;
-                                            submitButton.disabled = true;
-                                            
-                                            try {
-                                                // Add user message to chat
-                                                addMessage('user', userMessage);
-                                                
-                                                // Clear input
-                                                questionInput.value = '';
-                                                
-                                                // Send message to server
-                                                const response = await fetch('/chat', {
-                                                    method: 'POST',
-                                                    headers: {
-                                                        'Content-Type': 'application/json',
-                                                    },
-                                                    body: JSON.stringify({ message: userMessage })
-                                                });
-                                                
-                                                const data = await response.json();
-                                                
-                                                if (response.ok) {
-                                                    // Add AI response to chat
-                                                    addMessage('ai', data.response);
-                                                } else {
-                                                    throw new Error(data.error || 'Failed to get response');
-                                                }
-                                            } catch (error) {
-                                                console.error('Error:', error);
-                                                addMessage('error', 'Sorry, there was an error processing your request. Please try again.');
-                                            } finally {
-                                                // Re-enable input and button
-                                                questionInput.disabled = false;
-                                                submitButton.disabled = false;
-                                                questionInput.focus();
-                                            }
-                                        });
+                                    <style>
+                                        .message-container {
+                                            display: flex;
+                                            gap: 1rem;
+                                            padding: 0.5rem 1rem;
+                                            max-width: 90%;
+                                            margin: 0.5rem 0;
+                                        }
 
+                                        .message-container.user {
+                                            margin-left: auto;
+                                            flex-direction: row-reverse;
+                                        }
+
+                                        .message-bubble {
+                                            padding: 0.75rem 1rem;
+                                            border-radius: 1.5rem;
+                                            position: relative;
+                                            max-width: 80%;
+                                        }
+
+                                        .message-bubble.ai {
+                                            background-color: white;
+                                            border: 1px solid #e5e7eb;
+                                            border-bottom-left-radius: 0.5rem;
+                                        }
+
+                                        .message-bubble.user {
+                                            background-color: #e9f2ff;
+                                            border-bottom-right-radius: 0.5rem;
+                                        }
+
+                                        .avatar {
+                                            width: 2.5rem;
+                                            height: 2.5rem;
+                                            border-radius: 50%;
+                                            flex-shrink: 0;
+                                        }
+
+                                        .avatar.ai {
+                                            border: 1px solid #e5e7eb;
+                                        }
+
+                                        .avatar.user {
+                                            background-color: #4b9cff;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            color: white;
+                                            font-weight: 500;
+                                        }
+
+                                        #chatMessages::-webkit-scrollbar {
+                                            width: 6px;
+                                        }
+
+                                        #chatMessages::-webkit-scrollbar-track {
+                                            background: transparent;
+                                        }
+
+                                        #chatMessages::-webkit-scrollbar-thumb {
+                                            background-color: rgba(0, 0, 0, 0.1);
+                                            border-radius: 3px;
+                                        }
+
+                                        .typing-indicator {
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 0.25rem;
+                                            padding: 1rem;
+                                            background: white;
+                                            border: 1px solid #e5e7eb;
+                                            border-radius: 1.5rem;
+                                            border-bottom-left-radius: 0.5rem;
+                                            width: fit-content;
+                                        }
+
+                                        @media (max-width: 640px) {
+                                            .message-container {
+                                                max-width: 100%;
+                                                padding: 0.25rem 0.5rem;
+                                            }
+                                            .message-bubble {
+                                                max-width: 85%;
+                                            }
+                                            .avatar {
+                                                width: 2rem;
+                                                height: 2rem;
+                                            }
+                                        }
+                                    </style>
+
+                                    <script>
                                         function addMessage(type, content) {
                                             const chatMessages = document.getElementById('chatMessages');
-                                            const messageDiv = document.createElement('div');
-                                            messageDiv.className = 'message p-4 rounded-lg ' + 
-                                                (type === 'user' ? 'bg-blue-100 ml-auto' : 
-                                                 type === 'ai' ? 'bg-gray-100' : 'bg-red-100');
-                                            messageDiv.style.maxWidth = '80%';
-                                            messageDiv.textContent = content;
-                                            chatMessages.appendChild(messageDiv);
+                                            const messageContainer = document.createElement('div');
+                                            messageContainer.className = `message-container ${type}`;
+                                            
+                                            const avatar = document.createElement('div');
+                                            if (type === 'user') {
+                                                avatar.className = 'avatar user';
+                                                avatar.textContent = 'U';
+                                            } else {
+                                                avatar.className = 'avatar ai';
+                                                avatar.innerHTML = '<img src="static/profile.jpg" alt="Dr. Ashita Tolwani" class="w-full h-full object-cover rounded-full">';
+                                            }
+                                            
+                                            const messageBubble = document.createElement('div');
+                                            messageBubble.className = `message-bubble ${type}`;
+                                            messageBubble.textContent = content;
+                                            
+                                            if (type === 'user') {
+                                                messageContainer.appendChild(messageBubble);
+                                                messageContainer.appendChild(avatar);
+                                            } else {
+                                                messageContainer.appendChild(avatar);
+                                                messageContainer.appendChild(messageBubble);
+                                            }
+                                            
+                                            chatMessages.appendChild(messageContainer);
                                             chatMessages.scrollTop = chatMessages.scrollHeight;
                                         }
+
+                                        // Add welcome message when page loads
+                                        window.addEventListener('load', () => {
+                                            addMessage('ai', 'Hello! I\'m Dr. Ashita Tolwani\'s AI assistant. How can I help you today?');
+                                        });
                                     </script>
                                 </div>
 
@@ -730,23 +805,25 @@ Remember: While you can provide medical information and education, always remind
                             }
                         }
 
-                        document.getElementById('questionForm').addEventListener('submit', async (e) => {
+                        document.getElementById('questionForm').addEventListener('submit', async function(e) {
                             e.preventDefault();
-                            const input = document.getElementById('questionInput');
-                            const message = input.value.trim();
-                            if (!message) return;
+                            
+                            const questionInput = document.getElementById('questionInput');
+                            const userMessage = questionInput.value.trim();
+                            
+                            if (!userMessage) return;
                             
                             // Disable input and button while processing
-                            const submitButton = document.getElementById('sendButton');
-                            input.disabled = true;
+                            const submitButton = this.querySelector('button[type="submit"]');
+                            questionInput.disabled = true;
                             submitButton.disabled = true;
                             
                             try {
                                 // Add user message to chat
-                                addMessage('user', message);
+                                addMessage('user', userMessage);
                                 
                                 // Clear input
-                                input.value = '';
+                                questionInput.value = '';
                                 
                                 // Send message to server
                                 const response = await fetch('/chat', {
@@ -754,29 +831,28 @@ Remember: While you can provide medical information and education, always remind
                                     headers: {
                                         'Content-Type': 'application/json',
                                     },
-                                    body: JSON.stringify({ message }),
+                                    body: JSON.stringify({ message: userMessage })
                                 });
                                 
-                                // Remove typing indicator
-                                removeTypingIndicator();
-
                                 const data = await response.json();
-                                if (data.error) {
-                                    addMessage('error', data.error);
+                                
+                                if (response.ok) {
+                                    // Add AI response to chat
+                                    addMessage('ai', data.response);
                                 } else {
-                                    addMessage('assistant', data.response);
+                                    throw new Error(data.error || 'Failed to get response');
                                 }
                             } catch (error) {
-                                // Remove typing indicator
-                                removeTypingIndicator();
-                                addMessage('error', 'Failed to get response');
+                                console.error('Error:', error);
+                                addMessage('error', 'Sorry, there was an error processing your request. Please try again.');
                             } finally {
                                 // Re-enable input and button
-                                input.disabled = false;
+                                questionInput.disabled = false;
                                 submitButton.disabled = false;
-                                input.focus();
+                                questionInput.focus();
                             }
                         });
+
                     </script>
                 </body>
                 </html>
