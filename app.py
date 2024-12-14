@@ -282,29 +282,124 @@ Remember: While you can provide medical information and education, always remind
 
                                 <!-- Content Sections -->
                                 <div id="chatSection" class="transition-opacity duration-200">
-                                    <div class="bg-white rounded-lg shadow-lg p-6">
-                                        <div id="chatMessages" class="space-y-4 mb-6 max-h-[500px] overflow-y-auto"></div>
-                                        <form id="questionForm" class="mt-4">
-                                            <div class="flex space-x-4">
-                                                <input type="text" 
-                                                       id="questionInput" 
-                                                       class="flex-1 p-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                                       placeholder="Ask a medical question...">
-                                                <button type="button"
-                                                        id="micButton"
-                                                        class="mic-button p-4 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                        title="Click to speak">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
-                                                    </svg>
-                                                </button>
+                                    <div class="bg-gray-50 min-h-[60vh] p-4">
+                                        <!-- Chat Messages -->
+                                        <div id="chatMessages" class="space-y-4 mb-4">
+                                            <!-- Welcome Message -->
+                                            <div class="welcome-text text-center mb-6">
+                                                Hello, I'm Ashita Tolwani MD's AI.<br/>
+                                                What would you like to discuss today?
+                                            </div>
+                                        </div>
+
+                                        <!-- Chat Input Form -->
+                                        <form id="chatForm" class="sticky bottom-0 bg-white rounded-lg shadow-lg p-4">
+                                            <div class="flex items-center space-x-4">
+                                                <div class="flex-grow">
+                                                    <textarea id="userInput" 
+                                                            name="userInput"
+                                                            rows="1"
+                                                            class="w-full px-4 py-2 text-gray-700 bg-gray-50 rounded-2xl border border-gray-200 focus:outline-none focus:border-blue-500 resize-none"
+                                                            placeholder="Type your message..."
+                                                            style="min-height: 44px; max-height: 200px;"
+                                                            required></textarea>
+                                                </div>
                                                 <button type="submit" 
-                                                        class="send-button bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium transition-colors duration-200 text-lg">
+                                                        class="send-button flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-medium transition-colors duration-200">
                                                     Send
                                                 </button>
                                             </div>
                                         </form>
                                     </div>
+
+                                    <style>
+                                        .message {
+                                            max-width: 85%;
+                                            padding: 0.75rem 1rem;
+                                            margin: 0.5rem 0;
+                                            border-radius: 1.5rem;
+                                            line-height: 1.5;
+                                        }
+                                        
+                                        .user-message {
+                                            margin-left: auto;
+                                            background-color: #1a8cff;
+                                            color: white;
+                                            border-bottom-right-radius: 0.5rem;
+                                        }
+                                        
+                                        .ai-message {
+                                            margin-right: auto;
+                                            background-color: #f0f2f5;
+                                            color: #1a1a1a;
+                                            border-bottom-left-radius: 0.5rem;
+                                        }
+
+                                        .message-container {
+                                            display: flex;
+                                            margin: 1rem 0;
+                                        }
+
+                                        .ai-avatar {
+                                            width: 2.5rem;
+                                            height: 2.5rem;
+                                            border-radius: 50%;
+                                            margin-right: 0.75rem;
+                                            flex-shrink: 0;
+                                        }
+
+                                        .user-avatar {
+                                            width: 2.5rem;
+                                            height: 2.5rem;
+                                            border-radius: 50%;
+                                            margin-left: 0.75rem;
+                                            background-color: #1a8cff;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            color: white;
+                                            font-weight: bold;
+                                            flex-shrink: 0;
+                                        }
+
+                                        @media (max-width: 768px) {
+                                            .message {
+                                                max-width: 90%;
+                                                font-size: 1rem;
+                                            }
+                                            .ai-avatar, .user-avatar {
+                                                width: 2rem;
+                                                height: 2rem;
+                                            }
+                                        }
+                                    </style>
+
+                                    <script>
+                                        function addMessage(type, content) {
+                                            const chatMessages = document.getElementById('chatMessages');
+                                            const messageContainer = document.createElement('div');
+                                            messageContainer.className = 'message-container';
+                                            
+                                            if (type === 'user') {
+                                                messageContainer.innerHTML = `
+                                                    <div class="flex-grow">
+                                                        <div class="message user-message">${content}</div>
+                                                    </div>
+                                                    <div class="user-avatar">U</div>
+                                                `;
+                                            } else {
+                                                messageContainer.innerHTML = `
+                                                    <img src="static/profile.jpg" alt="Dr. Ashita Tolwani" class="ai-avatar">
+                                                    <div class="flex-grow">
+                                                        <div class="message ai-message">${content}</div>
+                                                    </div>
+                                                `;
+                                            }
+                                            
+                                            chatMessages.appendChild(messageContainer);
+                                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                                        }
+                                    </script>
                                 </div>
 
                                 <!-- Podcasts Section -->
