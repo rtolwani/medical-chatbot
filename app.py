@@ -408,6 +408,7 @@ Remember: While you can provide medical information and education, always remind
 
                                     <script>
                                         function addMessage(type, content) {
+                                            console.log('Adding message:', type, content);
                                             const chatMessages = document.getElementById('chatMessages');
                                             const messageContainer = document.createElement('div');
                                             messageContainer.className = `message-container ${type}`;
@@ -416,9 +417,13 @@ Remember: While you can provide medical information and education, always remind
                                             if (type === 'user') {
                                                 avatar.className = 'avatar user';
                                                 avatar.textContent = 'U';
-                                            } else {
+                                            } else if (type === 'ai') {
                                                 avatar.className = 'avatar ai';
                                                 avatar.innerHTML = '<img src="static/profile.jpg" alt="Dr. Ashita Tolwani" class="w-full h-full object-cover rounded-full">';
+                                            } else {
+                                                // Error message
+                                                avatar.className = 'avatar error';
+                                                avatar.innerHTML = '!';
                                             }
                                             
                                             const messageBubble = document.createElement('div');
@@ -435,10 +440,12 @@ Remember: While you can provide medical information and education, always remind
                                             
                                             chatMessages.appendChild(messageContainer);
                                             chatMessages.scrollTop = chatMessages.scrollHeight;
+                                            console.log('Message added successfully');
                                         }
 
                                         // Add welcome message when page loads
                                         window.addEventListener('load', () => {
+                                            console.log('Page loaded, adding welcome message');
                                             addMessage('ai', 'Hello! I\'m Dr. Ashita Tolwani\'s AI assistant. How can I help you today?');
                                         });
                                     </script>
@@ -770,6 +777,7 @@ Remember: While you can provide medical information and education, always remind
                         }
 
                         function addMessage(type, content) {
+                            console.log('Adding message:', type, content);
                             const messages = document.getElementById('chatMessages');
                             const div = document.createElement('div');
                             div.className = `chat-message ${
@@ -807,9 +815,11 @@ Remember: While you can provide medical information and education, always remind
 
                         document.getElementById('questionForm').addEventListener('submit', async function(e) {
                             e.preventDefault();
+                            console.log('Form submitted');
                             
                             const questionInput = document.getElementById('questionInput');
                             const userMessage = questionInput.value.trim();
+                            console.log('User message:', userMessage);
                             
                             if (!userMessage) return;
                             
@@ -819,12 +829,14 @@ Remember: While you can provide medical information and education, always remind
                             submitButton.disabled = true;
                             
                             try {
+                                console.log('Adding user message to chat');
                                 // Add user message to chat
                                 addMessage('user', userMessage);
                                 
                                 // Clear input
                                 questionInput.value = '';
                                 
+                                console.log('Sending request to server');
                                 // Send message to server
                                 const response = await fetch('/chat', {
                                     method: 'POST',
@@ -834,16 +846,19 @@ Remember: While you can provide medical information and education, always remind
                                     body: JSON.stringify({ message: userMessage })
                                 });
                                 
+                                console.log('Server response:', response);
                                 const data = await response.json();
+                                console.log('Response data:', data);
                                 
                                 if (response.ok) {
+                                    console.log('Adding AI response to chat');
                                     // Add AI response to chat
                                     addMessage('ai', data.response);
                                 } else {
                                     throw new Error(data.error || 'Failed to get response');
                                 }
                             } catch (error) {
-                                console.error('Error:', error);
+                                console.error('Error in chat:', error);
                                 addMessage('error', 'Sorry, there was an error processing your request. Please try again.');
                             } finally {
                                 // Re-enable input and button
@@ -898,31 +913,41 @@ Remember: While you can provide medical information and education, always remind
     @app.route('/chat', methods=['POST'])
     def chat():
         try:
+            logger.info("Received chat request")
             data = request.json
             if not data or 'message' not in data:
+                logger.error("No message provided in request")
                 return jsonify({'error': 'No message provided'}), 400
 
             user_message = data['message']
+            logger.info(f"Processing message: {user_message}")
             
-            # Create chat completion with OpenAI
-            response = client.chat.completions.create(
-                model="gpt-4-1106-preview",
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_message}
-                ],
-                temperature=0.7,
-                max_tokens=1000
-            )
-            
-            # Extract the response text
-            ai_response = response.choices[0].message.content
-            
-            return jsonify({'response': ai_response})
-            
-        except OpenAIError as e:
-            logger.error(f"OpenAI API error: {str(e)}")
-            return jsonify({'error': 'Failed to get response from AI'}), 500
+            try:
+                # Create chat completion with OpenAI
+                logger.info("Sending request to OpenAI")
+                response = client.chat.completions.create(
+                    model="gpt-4-1106-preview",
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": user_message}
+                    ],
+                    temperature=0.7,
+                    max_tokens=1000
+                )
+                
+                # Extract the response text
+                ai_response = response.choices[0].message.content
+                logger.info("Received response from OpenAI")
+                
+                return jsonify({'response': ai_response})
+                
+            except OpenAIError as e:
+                logger.error(f"OpenAI API error: {str(e)}")
+                return jsonify({'error': 'Failed to get response from AI'}), 500
+            except Exception as e:
+                logger.error(f"Error processing OpenAI request: {str(e)}")
+                return jsonify({'error': 'Failed to process AI response'}), 500
+                
         except Exception as e:
             logger.error(f"Unexpected error in chat endpoint: {str(e)}")
             return jsonify({'error': 'Internal server error'}), 500
