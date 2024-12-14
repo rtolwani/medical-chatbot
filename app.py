@@ -282,121 +282,88 @@ Remember: While you can provide medical information and education, always remind
 
                                 <!-- Content Sections -->
                                 <div id="chatSection" class="transition-opacity duration-200">
-                                    <div class="bg-gray-50 min-h-[60vh] p-4">
-                                        <!-- Chat Messages -->
-                                        <div id="chatMessages" class="space-y-4 mb-4">
-                                            <!-- Welcome Message -->
-                                            <div class="welcome-text text-center mb-6">
-                                                Hello, I'm Ashita Tolwani MD's AI.<br/>
-                                                What would you like to discuss today?
-                                            </div>
-                                        </div>
-
-                                        <!-- Chat Input Form -->
-                                        <form id="chatForm" class="sticky bottom-0 bg-white rounded-lg shadow-lg p-4">
-                                            <div class="flex items-center space-x-4">
-                                                <div class="flex-grow">
-                                                    <textarea id="userInput" 
-                                                            name="userInput"
-                                                            rows="1"
-                                                            class="w-full px-4 py-2 text-gray-700 bg-gray-50 rounded-2xl border border-gray-200 focus:outline-none focus:border-blue-500 resize-none"
-                                                            placeholder="Type your message..."
-                                                            style="min-height: 44px; max-height: 200px;"
-                                                            required></textarea>
-                                                </div>
+                                    <div class="bg-white rounded-lg shadow-lg p-6">
+                                        <div id="chatMessages" class="space-y-4 mb-6 max-h-[500px] overflow-y-auto"></div>
+                                        <form id="questionForm" class="mt-4">
+                                            <div class="flex space-x-4">
+                                                <input type="text" 
+                                                       id="questionInput" 
+                                                       class="flex-1 p-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                                       placeholder="Ask a medical question...">
+                                                <button type="button"
+                                                        id="micButton"
+                                                        class="mic-button p-4 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        title="Click to speak">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                                                    </svg>
+                                                </button>
                                                 <button type="submit" 
-                                                        class="send-button flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-medium transition-colors duration-200">
+                                                        class="send-button bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium transition-colors duration-200 text-lg">
                                                     Send
                                                 </button>
                                             </div>
                                         </form>
                                     </div>
 
-                                    <style>
-                                        .message {
-                                            max-width: 85%;
-                                            padding: 0.75rem 1rem;
-                                            margin: 0.5rem 0;
-                                            border-radius: 1.5rem;
-                                            line-height: 1.5;
-                                        }
-                                        
-                                        .user-message {
-                                            margin-left: auto;
-                                            background-color: #1a8cff;
-                                            color: white;
-                                            border-bottom-right-radius: 0.5rem;
-                                        }
-                                        
-                                        .ai-message {
-                                            margin-right: auto;
-                                            background-color: #f0f2f5;
-                                            color: #1a1a1a;
-                                            border-bottom-left-radius: 0.5rem;
-                                        }
-
-                                        .message-container {
-                                            display: flex;
-                                            margin: 1rem 0;
-                                        }
-
-                                        .ai-avatar {
-                                            width: 2.5rem;
-                                            height: 2.5rem;
-                                            border-radius: 50%;
-                                            margin-right: 0.75rem;
-                                            flex-shrink: 0;
-                                        }
-
-                                        .user-avatar {
-                                            width: 2.5rem;
-                                            height: 2.5rem;
-                                            border-radius: 50%;
-                                            margin-left: 0.75rem;
-                                            background-color: #1a8cff;
-                                            display: flex;
-                                            align-items: center;
-                                            justify-content: center;
-                                            color: white;
-                                            font-weight: bold;
-                                            flex-shrink: 0;
-                                        }
-
-                                        @media (max-width: 768px) {
-                                            .message {
-                                                max-width: 90%;
-                                                font-size: 1rem;
-                                            }
-                                            .ai-avatar, .user-avatar {
-                                                width: 2rem;
-                                                height: 2rem;
-                                            }
-                                        }
-                                    </style>
-
                                     <script>
+                                        document.getElementById('questionForm').addEventListener('submit', async function(e) {
+                                            e.preventDefault();
+                                            
+                                            const questionInput = document.getElementById('questionInput');
+                                            const userMessage = questionInput.value.trim();
+                                            
+                                            if (!userMessage) return;
+                                            
+                                            // Disable input and button while processing
+                                            const submitButton = this.querySelector('button[type="submit"]');
+                                            questionInput.disabled = true;
+                                            submitButton.disabled = true;
+                                            
+                                            try {
+                                                // Add user message to chat
+                                                addMessage('user', userMessage);
+                                                
+                                                // Clear input
+                                                questionInput.value = '';
+                                                
+                                                // Send message to server
+                                                const response = await fetch('/chat', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json',
+                                                    },
+                                                    body: JSON.stringify({ message: userMessage })
+                                                });
+                                                
+                                                const data = await response.json();
+                                                
+                                                if (response.ok) {
+                                                    // Add AI response to chat
+                                                    addMessage('ai', data.response);
+                                                } else {
+                                                    throw new Error(data.error || 'Failed to get response');
+                                                }
+                                            } catch (error) {
+                                                console.error('Error:', error);
+                                                addMessage('error', 'Sorry, there was an error processing your request. Please try again.');
+                                            } finally {
+                                                // Re-enable input and button
+                                                questionInput.disabled = false;
+                                                submitButton.disabled = false;
+                                                questionInput.focus();
+                                            }
+                                        });
+
                                         function addMessage(type, content) {
                                             const chatMessages = document.getElementById('chatMessages');
-                                            const messageContainer = document.createElement('div');
-                                            messageContainer.className = 'message-container';
-                                            
-                                            if (type === 'user') {
-                                                messageContainer.innerHTML = `
-                                                    <div class="flex-grow">
-                                                        <div class="message user-message">${content}</div>
-                                                    </div>
-                                                    <div class="user-avatar">U</div>
-                                                `;
-                                            } else {
-                                                messageContainer.innerHTML = `
-                                                    <img src="static/profile.jpg" alt="Dr. Ashita Tolwani" class="ai-avatar">
-                                                    <div class="flex-grow">
-                                                        <div class="message ai-message">${content}</div>
-                                                    </div>
-                                                `;
-                                            }
-                                            
-                                            chatMessages.appendChild(messageContainer);
+                                            const messageDiv = document.createElement('div');
+                                            messageDiv.className = 'message p-4 rounded-lg ' + 
+                                                (type === 'user' ? 'bg-blue-100 ml-auto' : 
+                                                 type === 'ai' ? 'bg-gray-100' : 'bg-red-100');
+                                            messageDiv.style.maxWidth = '80%';
+                                            messageDiv.textContent = content;
+                                            chatMessages.appendChild(messageDiv);
                                             chatMessages.scrollTop = chatMessages.scrollHeight;
                                         }
                                     </script>
@@ -769,14 +736,19 @@ Remember: While you can provide medical information and education, always remind
                             const message = input.value.trim();
                             if (!message) return;
                             
-                            // Add user message
-                            addMessage('user', message);
-                            input.value = '';
-
-                            // Add typing indicator
-                            addTypingIndicator();
+                            // Disable input and button while processing
+                            const submitButton = document.getElementById('sendButton');
+                            input.disabled = true;
+                            submitButton.disabled = true;
                             
                             try {
+                                // Add user message to chat
+                                addMessage('user', message);
+                                
+                                // Clear input
+                                input.value = '';
+                                
+                                // Send message to server
                                 const response = await fetch('/chat', {
                                     method: 'POST',
                                     headers: {
@@ -798,6 +770,11 @@ Remember: While you can provide medical information and education, always remind
                                 // Remove typing indicator
                                 removeTypingIndicator();
                                 addMessage('error', 'Failed to get response');
+                            } finally {
+                                // Re-enable input and button
+                                input.disabled = false;
+                                submitButton.disabled = false;
+                                input.focus();
                             }
                         });
                     </script>
@@ -844,82 +821,35 @@ Remember: While you can provide medical information and education, always remind
 
     @app.route('/chat', methods=['POST'])
     def chat():
-        if not client:
-            return jsonify({"error": "OpenAI client not properly initialized"}), 500
-
         try:
-            data = request.get_json()
+            data = request.json
             if not data or 'message' not in data:
-                return jsonify({"error": "No message provided"}), 400
+                return jsonify({'error': 'No message provided'}), 400
 
             user_message = data['message']
-            logger.info(f"Received message: {user_message}")
-
-            try:
-                completion = client.chat.completions.create(
-                    model="gpt-4-0125-preview",
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT + "\n\nFormat your responses with clear sections and proper spacing. Use clean formatting with line breaks between paragraphs. Use plain text without any special characters or markdown formatting. For sections, use plain text headers without ###. For lists, use simple hyphens (-) or numbers (1.). Add empty lines between all paragraphs and sections for readability."},
-                        {"role": "user", "content": user_message}
-                    ],
-                    temperature=0.7,
-                    max_tokens=2000
-                )
-
-                assistant_response = completion.choices[0].message.content
-                
-                # Format the response
-                # Remove any asterisks and markdown formatting
-                formatted_response = assistant_response.replace('*', '').replace('###', '')
-                
-                # Split into paragraphs and ensure proper spacing
-                paragraphs = [p.strip() for p in formatted_response.split('\n') if p.strip()]
-                formatted_response = '\n\n'.join(paragraphs)
-                
-                # Add extra spacing after periods that end sentences
-                formatted_response = formatted_response.replace('. ', '.\n\n')
-                
-                # Add spacing after bullet points while preserving list structure
-                lines = formatted_response.split('\n')
-                formatted_lines = []
-                for i, line in enumerate(lines):
-                    line = line.strip()
-                    if line:
-                        if line.startswith('-') or line.startswith('1.') or line.startswith('2.'):
-                            # Don't add extra space before list items
-                            formatted_lines.append(line)
-                        else:
-                            # Add extra space before non-list items
-                            if i > 0 and not lines[i-1].strip().startswith('-') and not any(lines[i-1].strip().startswith(str(n) + '.') for n in range(1, 10)):
-                                formatted_lines.append('')
-                            formatted_lines.append(line)
-                
-                formatted_response = '\n'.join(formatted_lines)
-                
-                # Clean up any excessive newlines
-                while '\n\n\n' in formatted_response:
-                    formatted_response = formatted_response.replace('\n\n\n', '\n\n')
-                
-                # Ensure sections are properly spaced
-                sections = ['Key Features', 'Indications', 'Types', 'How']
-                for section in sections:
-                    formatted_response = formatted_response.replace(f'\n{section}', f'\n\n{section}')
-                
-                return jsonify({"response": formatted_response})
-
-            except OpenAIError as e:
-                logger.error(f"OpenAI API error: {str(e)}")
-                logger.error(traceback.format_exc())
-                return jsonify({"error": "Failed to generate response from AI model"}), 500
-            except Exception as e:
-                logger.error(f"Unexpected error during OpenAI call: {str(e)}")
-                logger.error(traceback.format_exc())
-                return jsonify({"error": "An unexpected error occurred"}), 500
-
+            
+            # Create chat completion with OpenAI
+            response = client.chat.completions.create(
+                model="gpt-4-1106-preview",
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_message}
+                ],
+                temperature=0.7,
+                max_tokens=1000
+            )
+            
+            # Extract the response text
+            ai_response = response.choices[0].message.content
+            
+            return jsonify({'response': ai_response})
+            
+        except OpenAIError as e:
+            logger.error(f"OpenAI API error: {str(e)}")
+            return jsonify({'error': 'Failed to get response from AI'}), 500
         except Exception as e:
-            logger.error(f"Server error: {str(e)}")
-            logger.error(traceback.format_exc())
-            return jsonify({"error": "Internal server error"}), 500
+            logger.error(f"Unexpected error in chat endpoint: {str(e)}")
+            return jsonify({'error': 'Internal server error'}), 500
 
     @app.route('/transcribe', methods=['POST'])
     def transcribe():
