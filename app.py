@@ -28,7 +28,13 @@ def create_app():
     app = Flask(__name__, static_url_path='/static', static_folder='static')
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
     app.config['UPLOAD_FOLDER'] = 'static/podcasts'
-    app.config['REFERENCES_FOLDER'] = 'references'
+    
+    # Set references folder based on environment
+    if os.getenv('FLASK_ENV') == 'production':
+        app.config['REFERENCES_FOLDER'] = '/tmp/references'
+    else:
+        app.config['REFERENCES_FOLDER'] = 'references'
+    
     app.secret_key = os.urandom(24)  # for flash messages
 
     ALLOWED_EXTENSIONS = {'mp3', 'wav', 'm4a', 'ogg', 'pdf'}
