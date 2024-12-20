@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dr. Tolwani's Medical Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-image: url('https://www.transparenttextures.com/patterns/medical-icons.png');
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .chat-container {
+            height: calc(100vh - 12rem);
+        }
+        .tab-active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+        .tab-inactive {
+            color: #6B7280;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-inactive:hover {
+            color: #4B5563;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <!-- Navigation Tabs -->
+        <div class="border-b border-gray-200">
+            <div class="container mx-auto px-4">
+                <nav class="flex space-x-8">
+                    <button onclick="switchTab('chat')" class="tab-active px-4 py-4 text-sm font-medium transition-colors duration-200 ease-in-out">
+                        Chat
+                    </button>
+                    <button onclick="switchTab('podcasts')" class="tab-inactive px-4 py-4 text-sm font-medium transition-colors duration-200 ease-in-out">
+                        Podcasts
+                    </button>
+                    <button onclick="switchTab('bio')" class="tab-inactive px-4 py-4 text-sm font-medium transition-colors duration-200 ease-in-out">
+                        Bio
+                    </button>
+                    <button onclick="switchTab('manage')" class="tab-inactive px-4 py-4 text-sm font-medium transition-colors duration-200 ease-in-out">
+                        Manage
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="container mx-auto px-4 py-8">
+            <!-- Doctor Info -->
+            <div class="max-w-4xl mx-auto mb-4">
+                <div class="bg-white rounded-xl shadow-lg p-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <img src="{{ url_for('static', filename='images/ravi-profile.jpeg') }}" 
+                             alt="Dr. Ravi Tolwani" 
+                             class="w-16 h-16 rounded-full shadow-lg border-2 border-white object-cover"
+                        >
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-800">Ravi Tolwani <span class="text-base">DVM PhD</span></h1>
+                            <p class="text-sm text-gray-600">Veterinarian & AI Expert</p>
+                            <p class="text-xs text-gray-500">Associate Vice President, The Rockefeller University</p>
+                            <p class="text-xs text-gray-600 mt-1">Podcasts on the future of AI in veterinary medicine</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div id="chat-section" class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-xl shadow-lg">
+                    <div id="chat-container" class="flex flex-col h-[calc(100vh-20rem)]">
+                        <!-- Chat History -->
+                        <div id="chat-history" class="flex-1 overflow-y-auto px-4 py-2 space-y-4">
+                            <!-- Messages will be added here -->
+                        </div>
+
+                        <!-- Loading Indicator -->
+                        <div id="loading-indicator" class="hidden">
+                            <div class="flex items-center space-x-2 px-4 py-3">
+                                <div class="flex space-x-2">
+                                    <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+                                    <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                                    <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chat Input Section -->
+                        <div class="border-t border-gray-200 bg-white p-4">
+                            <form id="chat-form" class="flex items-center space-x-2">
+                                <div class="relative flex-1">
+                                    <textarea 
+                                        id="user-input" 
+                                        rows="1"
+                                        placeholder="Ask me about veterinary medicine..." 
+                                        class="w-full p-3 pr-20 bg-gray-50 rounded-xl focus:outline-none text-sm resize-none border border-gray-200 focus:border-blue-500 transition-colors duration-200"
+                                        style="min-height: 44px; max-height: 120px;"
+                                    ></textarea>
+                                    <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                        <button type="button" 
+                                                id="mic-button" 
+                                                class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                                            <i class="fas fa-microphone text-sm"></i>
+                                        </button>
+                                        <button type="submit" 
+                                                class="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors">
+                                            <i class="fas fa-paper-plane text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Podcast Section -->
+            <div id="podcast-section" class="max-w-4xl mx-auto hidden">
+                <div class="bg-white rounded-xl shadow-lg p-4">
+                    <h2 class="text-2xl font-bold mb-4">Featured Podcasts</h2>
+                    <!-- Search input -->
+                    <div class="mb-4">
+                        <input type="text" 
+                               id="podcast-search" 
+                               placeholder="Search podcasts..." 
+                               class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-200"
+                               onkeyup="searchPodcasts()">
+                    </div>
+                    <div id="podcast-container" class="space-y-4">
+                        <!-- Podcast items will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manage Section -->
+            <div id="manage-section" class="max-w-4xl mx-auto hidden">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-bold mb-6">Manage Podcasts</h2>
+                    
+                    <!-- Add Podcast Form -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold mb-4">Add New Podcast</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Podcast Title</label>
+                                <input type="text" id="new-podcast-title" 
+                                    class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-200"
+                                    placeholder="Enter podcast title">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Spotify URL</label>
+                                <input type="text" id="new-podcast-url" 
+                                    class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-200"
+                                    placeholder="Enter Spotify podcast URL">
+                            </div>
+                            <button onclick="addPodcast()" 
+                                class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                                Add Podcast
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Podcast List -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Current Podcasts</h3>
+                        <div id="manage-podcast-list" class="space-y-4">
+                            <!-- Podcast items will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bio Section -->
+            <div id="bio-section" class="max-w-4xl mx-auto hidden">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="prose max-w-none">
+                        <div class="mb-6">
+                            <p class="text-gray-700 leading-relaxed mb-6">
+                                Right now, we have an extraordinary opportunity to fundamentally improve the quality and delivery of veterinary medicine. Artificial intelligence creates space freeing veterinarians to focus on the human connection and on delivering quality patient care.
+                            </p>
+                            
+                            <p class="text-gray-700 leading-relaxed mb-6">
+                                Ravi Tolwani is a veterinarian-scientist with expertise in artificial intelligence and precision medicine. He has held faculty appointments at Stanford University and The Rockefeller University, where he is currently an Associate Vice President. He is a co-founder of dvmSuccess and AiLoVET.
+                            </p>
+                            
+                            <p class="text-gray-700 leading-relaxed mb-6">
+                                Ravi holds a DVM from Auburn University, a Ph.D. from the University of Alabama School of Medicine, and an MSx from Stanford Graduate School of Business.
+                            </p>
+                            
+                            <div class="mt-6">
+                                <a href="https://www.linkedin.com/in/ravitolwani/" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer" 
+                                   class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors">
+                                    <i class="fab fa-linkedin text-xl"></i>
+                                    <span>Connect on LinkedIn</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let recognition;
+        let isListening = false;
+
+        // Initialize speech recognition
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = function() {
+                    isListening = true;
+                    const micButton = document.getElementById('mic-button');
+                    micButton.innerHTML = '<i class="fas fa-microphone text-sm text-red-500"></i>';
+                    micButton.classList.add('animate-pulse');
+                };
+
+                recognition.onend = function() {
+                    isListening = false;
+                    const micButton = document.getElementById('mic-button');
+                    micButton.innerHTML = '<i class="fas fa-microphone text-sm"></i>';
+                    micButton.classList.remove('animate-pulse');
+                };
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('user-input').value = transcript;
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    isListening = false;
+                    const micButton = document.getElementById('mic-button');
+                    micButton.innerHTML = '<i class="fas fa-microphone text-sm"></i>';
+                    micButton.classList.remove('animate-pulse');
+                    if (event.error === 'not-allowed') {
+                        alert('Please allow microphone access to use voice input.');
+                    }
+                };
+            } else {
+                console.error('Speech recognition not supported');
+                document.getElementById('mic-button').style.display = 'none';
+            }
+        }
+
+        // Toggle speech recognition
+        function toggleSpeechRecognition() {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+
+            if (isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+
+        // Initialize speech recognition when the page loads
+        window.addEventListener('load', initSpeechRecognition);
+
+        // Chat functionality
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const chatHistory = document.getElementById('chat-history');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const micButton = document.getElementById('mic-button');
+
+        // Speech Recognition Setup
+        let recognitionSetup = null;
+        let isListeningSetup = false;
+
+        function initSpeechRecognitionSetup() {
+            if ('webkitSpeechRecognition' in window) {
+                recognitionSetup = new webkitSpeechRecognition();
+                recognitionSetup.continuous = false;
+                recognitionSetup.interimResults = false;
+                recognitionSetup.lang = 'en-US';
+
+                recognitionSetup.onstart = function() {
+                    isListeningSetup = true;
+                    micButton.innerHTML = '<i class="fas fa-microphone text-sm text-red-500"></i>';
+                    micButton.classList.add('animate-pulse');
+                };
+
+                recognitionSetup.onend = function() {
+                    isListeningSetup = false;
+                    micButton.innerHTML = '<i class="fas fa-microphone text-sm"></i>';
+                    micButton.classList.remove('animate-pulse');
+                };
+
+                recognitionSetup.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    userInput.value = transcript;
+                    // Automatically submit the form after voice input
+                    chatForm.dispatchEvent(new Event('submit'));
+                };
+
+                recognitionSetup.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    isListeningSetup = false;
+                    micButton.innerHTML = '<i class="fas fa-microphone text-sm"></i>';
+                    micButton.classList.remove('animate-pulse');
+                    if (event.error === 'not-allowed') {
+                        alert('Please allow microphone access to use voice input.');
+                    }
+                };
+            } else {
+                console.error('Speech recognition not supported');
+                micButton.style.display = 'none';
+            }
+        }
+
+        function toggleSpeechRecognitionSetup() {
+            if (!recognitionSetup) {
+                initSpeechRecognitionSetup();
+            }
+
+            if (isListeningSetup) {
+                recognitionSetup.stop();
+            } else {
+                recognitionSetup.start();
+            }
+        }
+
+        // Initialize speech recognition and add click handler
+        initSpeechRecognitionSetup();
+        micButton.addEventListener('click', toggleSpeechRecognitionSetup);
+
+        // Add keyboard shortcut (spacebar) for voice input
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && document.activeElement !== userInput) {
+                e.preventDefault();
+                toggleSpeechRecognitionSetup();
+            }
+        });
+
+        function addMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex ' + (role === 'user' ? 'justify-end' : 'justify-start');
+
+            if (role !== 'user') {
+                // Add avatar for assistant
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'flex-shrink-0 w-8 h-8 rounded-full overflow-hidden mr-2';
+                const avatar = document.createElement('img');
+                avatar.src = "{{ url_for('static', filename='images/ravi-profile.jpeg') }}";
+                avatar.className = 'w-full h-full object-cover';
+                avatarDiv.appendChild(avatar);
+                messageDiv.appendChild(avatarDiv);
+            }
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = `max-w-[80%] ${
+                role === 'user'
+                    ? 'bg-blue-500 text-white rounded-2xl rounded-tr-sm'
+                    : 'bg-gray-100 text-gray-800 rounded-2xl rounded-tl-sm'
+            }`;
+
+            const textDiv = document.createElement('div');
+            textDiv.className = 'p-3 text-sm';
+            textDiv.textContent = content;
+
+            contentDiv.appendChild(textDiv);
+            messageDiv.appendChild(contentDiv);
+            chatHistory.appendChild(messageDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Clear input and add user message
+            userInput.value = '';
+            addMessage('user', message);
+            loadingIndicator.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: message })
+                });
+
+                loadingIndicator.classList.add('hidden');
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                if (data.error) {
+                    addMessage('assistant', 'I apologize, but I encountered an error. Please try again.');
+                } else {
+                    addMessage('assistant', data.response);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                loadingIndicator.classList.add('hidden');
+                addMessage('assistant', 'I apologize, but I encountered an error. Please try again.');
+            }
+        }
+
+        // Event Listeners
+        chatForm.addEventListener('submit', handleSubmit);
+
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Auto-resize textarea
+        userInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        let currentTab = 'chat';
+        function switchTab(tab) {
+            const chatSection = document.getElementById('chat-section');
+            const podcastSection = document.getElementById('podcast-section');
+            const bioSection = document.getElementById('bio-section');
+            const manageSection = document.getElementById('manage-section');
+            
+            // Hide all sections
+            chatSection.classList.add('hidden');
+            podcastSection.classList.add('hidden');
+            bioSection.classList.add('hidden');
+            manageSection.classList.add('hidden');
+            
+            // Show selected section
+            if (tab === 'chat') {
+                chatSection.classList.remove('hidden');
+            } else if (tab === 'podcasts') {
+                podcastSection.classList.remove('hidden');
+            } else if (tab === 'bio') {
+                bioSection.classList.remove('hidden');
+            } else if (tab === 'manage') {
+                manageSection.classList.remove('hidden');
+            }
+            
+            // Update tab styling
+            document.querySelectorAll('nav button').forEach(button => {
+                if (button.textContent.trim().toLowerCase() === tab) {
+                    button.classList.remove('tab-inactive');
+                    button.classList.add('tab-active');
+                } else {
+                    button.classList.remove('tab-active');
+                    button.classList.add('tab-inactive');
+                }
+            });
+        }
+
+        function searchPodcasts() {
+            const searchInput = document.getElementById('podcast-search');
+            const filter = searchInput.value.toLowerCase();
+            const podcastItems = document.querySelectorAll('.podcast-item');
+
+            podcastItems.forEach(item => {
+                const title = item.querySelector('h3').textContent.toLowerCase();
+                if (title.includes(filter)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Store podcasts in localStorage
+        let podcasts = JSON.parse(localStorage.getItem('podcasts')) || [
+            {
+                title: "Inside NotebookLM with Raiza Martin and Steven Johnson",
+                url: "https://open.spotify.com/embed/episode/6QBjrx18C3guPTFVoW1Hrc"
+            },
+            {
+                title: "Gemini 2.0 and the Evolution of Agentic AI with Oriol Vinyals",
+                url: "https://open.spotify.com/embed/episode/1GSAkysjgRMXQjJiOSWDNG"
+            },
+            {
+                title: "How NotebookLM Enhances Productivity",
+                url: "https://open.spotify.com/embed/episode/2GQ7Lr3s6TFvkyMR0GsvI5"
+            }
+        ];
+
+        // Initialize podcasts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshPodcastDisplay();
+            displayManagePodcasts();
+        });
+
+        function addPodcast() {
+            const title = document.getElementById('new-podcast-title').value.trim();
+            let url = document.getElementById('new-podcast-url').value.trim();
+
+            if (!title || !url) {
+                alert('Please fill in both title and URL fields');
+                return;
+            }
+
+            // Convert regular Spotify URL to embed URL if needed
+            if (!url.includes('embed')) {
+                const match = url.match(/episode\/([a-zA-Z0-9]+)/);
+                if (match) {
+                    url = `https://open.spotify.com/embed/episode/${match[1]}`;
+                }
+            }
+
+            // Add new podcast to the beginning of the array
+            podcasts.unshift({ title, url });
+            localStorage.setItem('podcasts', JSON.stringify(podcasts));
+
+            // Clear input fields
+            document.getElementById('new-podcast-title').value = '';
+            document.getElementById('new-podcast-url').value = '';
+
+            // Refresh displays
+            refreshPodcastDisplay();
+            displayManagePodcasts();
+        }
+
+        function deletePodcast(index) {
+            if (confirm('Are you sure you want to delete this podcast?')) {
+                podcasts.splice(index, 1);
+                localStorage.setItem('podcasts', JSON.stringify(podcasts));
+                refreshPodcastDisplay();
+                displayManagePodcasts();
+            }
+        }
+
+        function refreshPodcastDisplay() {
+            const podcastContainer = document.getElementById('podcast-container');
+            if (!podcastContainer) return;
+            
+            podcastContainer.innerHTML = '';
+
+            // Display podcasts in chronological order (newest first)
+            podcasts.forEach(podcast => {
+                const podcastElement = document.createElement('div');
+                podcastElement.className = 'podcast-item';
+                podcastElement.innerHTML = `
+                    <h3 class="text-base font-semibold text-gray-800 mb-1">${podcast.title}</h3>
+                    <iframe style="border-radius:12px" 
+                        src="${podcast.url}?utm_source=generator" 
+                        width="100%" 
+                        height="100" 
+                        frameBorder="0" 
+                        allowfullscreen="" 
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                        loading="lazy">
+                    </iframe>
+                `;
+                podcastContainer.appendChild(podcastElement);
+            });
+        }
+
+        function displayManagePodcasts() {
+            const manageList = document.getElementById('manage-podcast-list');
+            if (!manageList) return;
+            
+            manageList.innerHTML = '';
+
+            // Display manage list in same order as podcast display (newest first)
+            podcasts.forEach((podcast, index) => {
+                const podcastElement = document.createElement('div');
+                podcastElement.className = 'flex items-center justify-between p-3 border border-gray-200 rounded-lg';
+                podcastElement.innerHTML = `
+                    <div class="flex-1">
+                        <h4 class="font-medium">${podcast.title}</h4>
+                        <p class="text-sm text-gray-500 truncate">${podcast.url}</p>
+                    </div>
+                    <button onclick="deletePodcast(${index})" 
+                        class="ml-4 px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
+                        Delete
+                    </button>
+                `;
+                manageList.appendChild(podcastElement);
+            });
+        }
+    </script>
+</body>
+</html>
