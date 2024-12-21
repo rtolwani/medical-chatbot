@@ -9,19 +9,31 @@ from werkzeug.utils import secure_filename
 import glob
 import PyPDF2
 
-# Configure logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stdout
-)
-logger = logging.getLogger(__name__)
-
 # Load environment variables
 load_dotenv()
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
+
 # Initialize OpenAI client
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+api_key = os.getenv('OPENAI_API_KEY')
+if not api_key:
+    logger.error("No OpenAI API key found in environment variables")
+    client = None
+else:
+    try:
+        client = OpenAI(api_key=api_key)
+        logger.info("OpenAI client initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize OpenAI client: {str(e)}")
+        client = None
 
 def create_app():
     # Initialize Flask app
@@ -34,6 +46,13 @@ def create_app():
         app.config['REFERENCES_FOLDER'] = '/tmp/references'
     else:
         app.config['REFERENCES_FOLDER'] = 'references'
+    
+    # Ensure references directory exists
+    try:
+        os.makedirs(app.config['REFERENCES_FOLDER'], exist_ok=True)
+        logger.info(f"References directory ensured at: {app.config['REFERENCES_FOLDER']}")
+    except Exception as e:
+        logger.error(f"Failed to create references directory: {str(e)}")
     
     app.secret_key = os.urandom(24)  # for flash messages
 

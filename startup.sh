@@ -8,5 +8,13 @@ if [ "$FLASK_ENV" = "production" ]; then
     cp -r references/*.pdf /tmp/references/ 2>/dev/null || true
 fi
 
-# Start the application
-exec gunicorn "app:create_app()" --bind 0.0.0.0:$PORT
+# Default port if not set
+export PORT=${PORT:-8080}
+
+# Start the application with worker timeout
+exec gunicorn "app:create_app()" \
+    --bind "0.0.0.0:$PORT" \
+    --workers 2 \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile -
