@@ -104,11 +104,10 @@ def get_embedding(text: str) -> List[float]:
         return []
 
 def cosine_similarity(a: List[float], b: List[float]) -> float:
-    """Calculate cosine similarity between two vectors."""
-    dot_product = sum(x * y for x, y in zip(a, b))
-    norm_a = sum(x * x for x in a) ** 0.5
-    norm_b = sum(x * x for x in b) ** 0.5
-    return dot_product / (norm_a * norm_b) if norm_a and norm_b else 0
+    """Calculate cosine similarity between two vectors using numpy for better performance."""
+    a_array = np.array(a)
+    b_array = np.array(b)
+    return np.dot(a_array, b_array) / (np.linalg.norm(a_array) * np.linalg.norm(b_array))
 
 def log_memory_usage():
     """Log current memory usage"""
@@ -120,17 +119,20 @@ def load_embeddings() -> pd.DataFrame:
     """Load and combine all embedding chunks into a single DataFrame."""
     log_memory_usage()
     logger.info("Starting to load embeddings")
+    
+    # Load and process chunks in batches
     all_chunks = []
-    chunk_files = glob.glob(os.path.join(EMBEDDINGS_CHUNKS_DIR, "embeddings_part_*.csv"))
+    chunk_files = sorted(glob.glob(os.path.join(EMBEDDINGS_CHUNKS_DIR, "embeddings_part_*.csv")))
     
     for chunk_file in chunk_files:
         try:
             logger.info(f"Loading chunk file: {chunk_file}")
-            chunk_df = pd.read_csv(chunk_file)
-            # Convert embedding strings to lists immediately to save memory
-            chunk_df['embedding'] = chunk_df['embedding'].apply(eval)
-            all_chunks.append(chunk_df)
-            log_memory_usage()
+            # Read CSV in chunks to reduce memory usage
+            for chunk_df in pd.read_csv(chunk_file, chunksize=100):
+                # Convert embedding strings to numpy arrays immediately
+                chunk_df['embedding'] = chunk_df['embedding'].apply(lambda x: np.array(eval(x)))
+                all_chunks.append(chunk_df)
+                log_memory_usage()
         except Exception as e:
             logger.error(f"Error loading chunk file {chunk_file}: {str(e)}")
     
@@ -176,6 +178,7 @@ def create_app():
         # Ensure directories exist
         os.makedirs(app.config['REFERENCES_FOLDER'], exist_ok=True)
         os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
+        os.makedirs(EMBEDDINGS_CHUNKS_DIR, exist_ok=True)
         
         references_path = os.path.join(app.config['REFERENCES_FOLDER'])
         pdf_files = glob.glob(os.path.join(references_path, '*.pdf'))
@@ -185,22 +188,8 @@ def create_app():
             return []
         
         logger.info(f"Found PDF files: {pdf_files}")
-        
-        # Check if vector store exists and is up to date
-        if os.path.exists(VECTOR_STORE_PATH):
-            store_modified = os.path.getmtime(VECTOR_STORE_PATH)
-            files_modified = max([os.path.getmtime(f) for f in pdf_files])
-            
-            if store_modified >= files_modified:
-                logger.info("Using cached vector store - files haven't changed")
-                return []  # Return empty since we don't need to update
-            else:
-                logger.info("PDF files have changed - rebuilding vector store")
-        else:
-            logger.info("Vector store not found - creating new one")
-        
-        logger.info(f"Processing {len(pdf_files)} PDF files")
         chunks_data = []
+        batch_size = 10  # Process embeddings in batches
         
         for pdf_path in pdf_files:
             try:
@@ -216,16 +205,31 @@ def create_app():
                     chunks = chunk_text(text)
                     logger.info(f"Created {len(chunks)} chunks")
                     
-                    # Get embeddings for chunks
+                    # Process embeddings in batches
+                    current_batch = []
                     for i, chunk in enumerate(chunks):
-                        logger.info(f"Getting embedding for chunk {i+1}/{len(chunks)}")
-                        embedding = get_embedding(chunk)
-                        if embedding:
-                            chunks_data.append({
-                                'text': chunk,
-                                'embedding': embedding,
-                                'source': os.path.basename(pdf_path)
-                            })
+                        current_batch.append(chunk)
+                        
+                        # Process batch when it reaches batch_size or is the last chunk
+                        if len(current_batch) == batch_size or i == len(chunks) - 1:
+                            logger.info(f"Processing batch of {len(current_batch)} chunks")
+                            
+                            # Get embeddings for the batch
+                            batch_embeddings = []
+                            for batch_chunk in current_batch:
+                                embedding = get_embedding(batch_chunk)
+                                if embedding:
+                                    batch_embeddings.append({
+                                        'text': batch_chunk,
+                                        'embedding': embedding,
+                                        'source': os.path.basename(pdf_path)
+                                    })
+                            
+                            chunks_data.extend(batch_embeddings)
+                            current_batch = []  # Reset batch
+                            
+                            # Log progress
+                            logger.info(f"Processed {i + 1}/{len(chunks)} chunks")
                     
                     references.append({
                         'filename': os.path.basename(pdf_path),
@@ -239,7 +243,7 @@ def create_app():
                 logger.error(traceback.format_exc())
                 print(error_msg)
         
-        # Save to CSV in chunks
+        # Save chunks in batches
         if chunks_data:
             logger.info(f"Saving {len(chunks_data)} chunks to vector store")
             try:
@@ -272,14 +276,14 @@ def create_app():
         logger.error(traceback.format_exc())
 
     def get_relevant_context(query: str, top_k: int = 3) -> List[Dict]:
-        """Find most relevant context for a query."""
+        """Find most relevant context for a query using vectorized operations."""
         try:
             log_memory_usage()
             logger.info("Starting context search")
             
-            # Get query embedding once
-            query_embedding = get_embedding(query)
-            if not query_embedding:
+            # Get query embedding once and convert to numpy array
+            query_embedding = np.array(get_embedding(query))
+            if query_embedding is None:
                 return []
             
             # Load embeddings
@@ -288,18 +292,26 @@ def create_app():
                 logger.warning("No embeddings found")
                 return []
 
-            # Calculate similarities and get top matches
+            # Vectorized similarity calculation
             logger.info("Calculating similarities")
-            similarities = df['embedding'].apply(lambda x: cosine_similarity(query_embedding, x))
-            top_indices = similarities.nlargest(top_k).index
+            embeddings_matrix = np.vstack(df['embedding'].values)
+            query_embedding = query_embedding.reshape(1, -1)
+            
+            # Compute similarities in a vectorized way
+            similarities = np.dot(embeddings_matrix, query_embedding.T).flatten()
+            norms = np.linalg.norm(embeddings_matrix, axis=1) * np.linalg.norm(query_embedding)
+            similarities = similarities / norms
+            
+            # Get top k indices
+            top_indices = np.argsort(similarities)[-top_k:][::-1]
             
             # Get relevant chunks
             relevant_chunks = []
             for idx in top_indices:
                 relevant_chunks.append({
-                    'text': df.loc[idx, 'text'],
-                    'similarity': similarities[idx],
-                    'source': df.loc[idx, 'source'] if 'source' in df.columns else 'unknown'
+                    'text': df.iloc[idx]['text'],
+                    'similarity': float(similarities[idx]),
+                    'source': df.iloc[idx]['source'] if 'source' in df.columns else 'unknown'
                 })
             
             log_memory_usage()
