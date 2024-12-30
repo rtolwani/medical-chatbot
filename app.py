@@ -6,6 +6,7 @@ import json
 import logging
 import traceback
 import sys
+import psutil
 from dotenv import load_dotenv
 import PyPDF2
 import pandas as pd
@@ -109,15 +110,27 @@ def cosine_similarity(a: List[float], b: List[float]) -> float:
     norm_b = sum(x * x for x in b) ** 0.5
     return dot_product / (norm_a * norm_b) if norm_a and norm_b else 0
 
+def log_memory_usage():
+    """Log current memory usage"""
+    process = psutil.Process(os.getpid())
+    mem_info = process.memory_info()
+    logger.info(f"Memory usage - RSS: {mem_info.rss / 1024 / 1024:.2f}MB, VMS: {mem_info.vms / 1024 / 1024:.2f}MB")
+
 def load_embeddings() -> pd.DataFrame:
     """Load and combine all embedding chunks into a single DataFrame."""
+    log_memory_usage()
+    logger.info("Starting to load embeddings")
     all_chunks = []
     chunk_files = glob.glob(os.path.join(EMBEDDINGS_CHUNKS_DIR, "embeddings_part_*.csv"))
     
     for chunk_file in chunk_files:
         try:
+            logger.info(f"Loading chunk file: {chunk_file}")
             chunk_df = pd.read_csv(chunk_file)
+            # Convert embedding strings to lists immediately to save memory
+            chunk_df['embedding'] = chunk_df['embedding'].apply(eval)
             all_chunks.append(chunk_df)
+            log_memory_usage()
         except Exception as e:
             logger.error(f"Error loading chunk file {chunk_file}: {str(e)}")
     
@@ -125,7 +138,10 @@ def load_embeddings() -> pd.DataFrame:
         logger.warning("No embedding chunks found!")
         return pd.DataFrame(columns=['text', 'embedding'])
     
-    return pd.concat(all_chunks, ignore_index=True)
+    logger.info("Concatenating all chunks")
+    result_df = pd.concat(all_chunks, ignore_index=True)
+    log_memory_usage()
+    return result_df
 
 def create_app():
     # Initialize Flask app
@@ -137,6 +153,16 @@ def create_app():
 
     # Store conversation history
     conversation_history = {}
+
+    # Log initial memory usage
+    log_memory_usage()
+    logger.info("Initializing application")
+
+    # Initialize directories
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    os.makedirs(app.config['REFERENCES_FOLDER'], exist_ok=True)
+    os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
+    os.makedirs(EMBEDDINGS_CHUNKS_DIR, exist_ok=True)
 
     ALLOWED_EXTENSIONS = {'mp3', 'wav', 'm4a', 'ogg', 'pdf'}
 
@@ -248,35 +274,36 @@ def create_app():
     def get_relevant_context(query: str, top_k: int = 3) -> List[Dict]:
         """Find most relevant context for a query."""
         try:
-            # Load all embedding chunks
+            log_memory_usage()
+            logger.info("Starting context search")
+            
+            # Get query embedding once
+            query_embedding = get_embedding(query)
+            if not query_embedding:
+                return []
+            
+            # Load embeddings
             df = load_embeddings()
             if df.empty:
                 logger.warning("No embeddings found")
                 return []
 
-            # Convert string representation of list back to actual list
-            df['embedding'] = df['embedding'].apply(eval)
-
-            # Get query embedding
-            query_embedding = get_embedding(query)
-            if not query_embedding:
-                return []
-            
-            # Calculate similarities
+            # Calculate similarities and get top matches
+            logger.info("Calculating similarities")
             similarities = df['embedding'].apply(lambda x: cosine_similarity(query_embedding, x))
-            
-            # Get top k most similar chunks
             top_indices = similarities.nlargest(top_k).index
-            results = []
             
+            # Get relevant chunks
+            relevant_chunks = []
             for idx in top_indices:
-                results.append({
-                    'text': df.iloc[idx]['text'],
-                    'source': df.iloc[idx]['source'],
-                    'similarity': similarities[idx]
+                relevant_chunks.append({
+                    'text': df.loc[idx, 'text'],
+                    'similarity': similarities[idx],
+                    'source': df.loc[idx, 'source'] if 'source' in df.columns else 'unknown'
                 })
             
-            return results
+            log_memory_usage()
+            return relevant_chunks
 
         except Exception as e:
             logger.error(f"Error getting relevant context: {str(e)}")
