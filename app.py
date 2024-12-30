@@ -30,7 +30,9 @@ client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 # Constants
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
-VECTOR_STORE_PATH = "vector_store.csv"
+VECTOR_STORE_DIR = "vector_store"
+VECTOR_STORE_PATH = os.path.join(VECTOR_STORE_DIR, "embeddings.csv")
+EMBEDDINGS_CHUNKS_DIR = os.path.join(VECTOR_STORE_DIR, "embeddings_chunks")
 EMBEDDING_MODEL = "text-embedding-3-small"
 
 SYSTEM_PROMPT = """You are Dr. Ravi Tolwani, DVM PhD, a distinguished veterinarian and AI expert. You are the Associate Vice President at The Rockefeller University, focusing on the intersection of medicine and artificial intelligence.
@@ -107,6 +109,24 @@ def cosine_similarity(a: List[float], b: List[float]) -> float:
     norm_b = sum(x * x for x in b) ** 0.5
     return dot_product / (norm_a * norm_b) if norm_a and norm_b else 0
 
+def load_embeddings() -> pd.DataFrame:
+    """Load and combine all embedding chunks into a single DataFrame."""
+    all_chunks = []
+    chunk_files = glob.glob(os.path.join(EMBEDDINGS_CHUNKS_DIR, "embeddings_part_*.csv"))
+    
+    for chunk_file in chunk_files:
+        try:
+            chunk_df = pd.read_csv(chunk_file)
+            all_chunks.append(chunk_df)
+        except Exception as e:
+            logger.error(f"Error loading chunk file {chunk_file}: {str(e)}")
+    
+    if not all_chunks:
+        logger.warning("No embedding chunks found!")
+        return pd.DataFrame(columns=['text', 'embedding'])
+    
+    return pd.concat(all_chunks, ignore_index=True)
+
 def create_app():
     # Initialize Flask app
     app = Flask(__name__, static_url_path='/static', static_folder='static')
@@ -126,34 +146,53 @@ def create_app():
     def get_pdf_references() -> List[Dict]:
         """Process PDF files and update vector store."""
         references = []
+        
+        # Ensure directories exist
+        os.makedirs(app.config['REFERENCES_FOLDER'], exist_ok=True)
+        os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
+        
         references_path = os.path.join(app.config['REFERENCES_FOLDER'])
         pdf_files = glob.glob(os.path.join(references_path, '*.pdf'))
+        
+        if not pdf_files:
+            logger.warning("No PDF files found in references directory")
+            return []
+        
+        logger.info(f"Found PDF files: {pdf_files}")
         
         # Check if vector store exists and is up to date
         if os.path.exists(VECTOR_STORE_PATH):
             store_modified = os.path.getmtime(VECTOR_STORE_PATH)
-            files_modified = max([os.path.getmtime(f) for f in pdf_files]) if pdf_files else 0
+            files_modified = max([os.path.getmtime(f) for f in pdf_files])
             
-            if store_modified > files_modified:
-                logger.info("Using cached vector store")
-                return []
+            if store_modified >= files_modified:
+                logger.info("Using cached vector store - files haven't changed")
+                return []  # Return empty since we don't need to update
+            else:
+                logger.info("PDF files have changed - rebuilding vector store")
+        else:
+            logger.info("Vector store not found - creating new one")
         
         logger.info(f"Processing {len(pdf_files)} PDF files")
         chunks_data = []
         
         for pdf_path in pdf_files:
             try:
+                logger.info(f"Processing PDF: {pdf_path}")
                 with open(pdf_path, 'rb') as file:
                     pdf_reader = PyPDF2.PdfReader(file)
                     text = ""
                     for page_num, page in enumerate(pdf_reader.pages):
+                        logger.info(f"Reading page {page_num + 1} of {len(pdf_reader.pages)}")
                         text += page.extract_text()
                     
                     # Chunk the text
                     chunks = chunk_text(text)
+                    logger.info(f"Created {len(chunks)} chunks")
                     
                     # Get embeddings for chunks
-                    for chunk in chunks:
+                    for i, chunk in enumerate(chunks):
+                        logger.info(f"Getting embedding for chunk {i+1}/{len(chunks)}")
                         embedding = get_embedding(chunk)
                         if embedding:
                             chunks_data.append({
@@ -167,45 +206,82 @@ def create_app():
                         'content': text
                     })
                     
-                logger.info(f"Processed {pdf_path}")
+                logger.info(f"Successfully processed {pdf_path}")
             except Exception as e:
-                logger.error(f"Error processing PDF {pdf_path}: {str(e)}")
+                error_msg = f"Error processing PDF {pdf_path}: {str(e)}"
+                logger.error(error_msg)
+                logger.error(traceback.format_exc())
+                print(error_msg)
         
-        # Save to CSV
+        # Save to CSV in chunks
         if chunks_data:
-            df = pd.DataFrame(chunks_data)
-            df.to_csv(VECTOR_STORE_PATH, index=False)
-            logger.info(f"Saved {len(chunks_data)} chunks to vector store")
+            logger.info(f"Saving {len(chunks_data)} chunks to vector store")
+            try:
+                df = pd.DataFrame(chunks_data)
+                chunk_size = len(df) // 6 + 1  # Split into 6 parts
+                os.makedirs(EMBEDDINGS_CHUNKS_DIR, exist_ok=True)
+                
+                for i, start_idx in enumerate(range(0, len(df), chunk_size)):
+                    end_idx = min(start_idx + chunk_size, len(df))
+                    chunk_df = df[start_idx:end_idx]
+                    chunk_path = os.path.join(EMBEDDINGS_CHUNKS_DIR, f"embeddings_part_{i+1}.csv")
+                    chunk_df.to_csv(chunk_path, index=False)
+                    logger.info(f"Saved chunk {i+1} to {chunk_path}")
+            except Exception as e:
+                error_msg = f"Error saving vector store chunks: {str(e)}"
+                logger.error(error_msg)
+                logger.error(traceback.format_exc())
+                print(error_msg)
+        else:
+            logger.warning("No chunks were processed successfully")
         
         return references
 
+    # Initialize vector store on startup
+    try:
+        logger.info("Initializing vector store...")
+        get_pdf_references()
+    except Exception as e:
+        logger.error(f"Error initializing vector store: {str(e)}")
+        logger.error(traceback.format_exc())
+
     def get_relevant_context(query: str, top_k: int = 3) -> List[Dict]:
         """Find most relevant context for a query."""
-        if not os.path.exists(VECTOR_STORE_PATH):
-            logger.warning("Vector store not found")
+        try:
+            # Load all embedding chunks
+            df = load_embeddings()
+            if df.empty:
+                logger.warning("No embeddings found")
+                return []
+
+            # Convert string representation of list back to actual list
+            df['embedding'] = df['embedding'].apply(eval)
+
+            # Get query embedding
+            query_embedding = get_embedding(query)
+            if not query_embedding:
+                return []
+            
+            # Calculate similarities
+            similarities = df['embedding'].apply(lambda x: cosine_similarity(query_embedding, x))
+            
+            # Get top k most similar chunks
+            top_indices = similarities.nlargest(top_k).index
+            results = []
+            
+            for idx in top_indices:
+                results.append({
+                    'text': df.iloc[idx]['text'],
+                    'source': df.iloc[idx]['source'],
+                    'similarity': similarities[idx]
+                })
+            
+            return results
+
+        except Exception as e:
+            logger.error(f"Error getting relevant context: {str(e)}")
+            logger.error(traceback.format_exc())
             return []
-        
-        # Load vector store
-        df = pd.read_csv(VECTOR_STORE_PATH)
-        if df.empty:
-            return []
-        
-        # Convert string representations of lists back to actual lists
-        df['embedding'] = df['embedding'].apply(eval)
-        
-        # Get query embedding
-        query_embedding = get_embedding(query)
-        if not query_embedding:
-            return []
-        
-        # Calculate similarities
-        similarities = df['embedding'].apply(lambda x: cosine_similarity(query_embedding, x))
-        df['similarity'] = similarities
-        
-        # Get top k results
-        results = df.nlargest(top_k, 'similarity')
-        
-        return results[['text', 'source', 'similarity']].to_dict('records')
 
     @app.route('/')
     def home():
@@ -223,10 +299,17 @@ def create_app():
 
         try:
             data = request.get_json()
-            if not data or 'message' not in data:
+            logger.info(f"Received data: {data}")  # Log the received data
+            
+            # More flexible message extraction
+            user_message = None
+            if isinstance(data, dict):
+                user_message = data.get('message') or data.get('query') or data.get('text')
+            
+            if not user_message:
+                logger.error("No message found in request data")
                 return jsonify({"error": "No message provided"}), 400
 
-            user_message = data['message']
             session_id = data.get('session_id', 'default')
             logger.info(f"Received message: {user_message} for session: {session_id}")
 
@@ -248,13 +331,15 @@ def create_app():
                 ])
 
                 # Construct the prompt with context
-                system_prompt = SYSTEM_PROMPT + "\n\nReference Material:\n" + context_text
+                system_prompt = SYSTEM_PROMPT + "\n\nReference Material:\n" + context_text if relevant_contexts else SYSTEM_PROMPT
 
                 messages = [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message}
                 ]
 
+                logger.info(f"Sending request to OpenAI with messages: {messages}")
+                
                 completion = client.chat.completions.create(
                     model="gpt-4",
                     messages=messages,
@@ -278,12 +363,16 @@ def create_app():
                     "context": relevant_contexts
                 })
 
-            except OpenAIError as e:
-                logger.error(f"OpenAI API error: {str(e)}")
-                return jsonify({"error": "Failed to get response from AI service"}), 500
+            except Exception as e:
+                error_msg = f"OpenAI API error: {str(e)}"
+                logger.error(error_msg)
+                print(error_msg)
+                return jsonify({"error": error_msg}), 500
 
         except Exception as e:
-            logger.error(f"Error in chat endpoint: {str(e)}\n{traceback.format_exc()}")
+            error_msg = f"Error in chat endpoint: {str(e)}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            print(error_msg)
             return jsonify({"error": "Internal server error"}), 500
 
     @app.route('/upload', methods=['POST'])
@@ -318,5 +407,5 @@ def create_app():
 if __name__ == '__main__':
     # For local development
     app = create_app()
-    port = int(os.getenv('PORT', 5001))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    port = int(os.getenv('PORT', 5002))  # Changed to port 5002
+    app.run(host='0.0.0.0', port=port, debug=True)

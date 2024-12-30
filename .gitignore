@@ -44,6 +44,10 @@ ENV/
 *.swp
 *.swo
 
+# Large files
+vector_store/embeddings.csv
+!vector_store/embeddings_chunks/
+
 # OS
 .DS_Store
 .DS_Store?
