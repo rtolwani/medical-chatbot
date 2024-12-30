@@ -333,10 +333,11 @@ def create_app():
                 # Construct the prompt with context
                 system_prompt = SYSTEM_PROMPT + "\n\nReference Material:\n" + context_text if relevant_contexts else SYSTEM_PROMPT
 
-                messages = [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
-                ]
+                # Use the full conversation history instead of just the current message
+                messages = conversation_history[session_id].copy()
+                
+                # Update the system message with the current context
+                messages[0]["content"] = system_prompt
 
                 logger.info(f"Sending request to OpenAI with messages: {messages}")
                 
@@ -407,5 +408,5 @@ def create_app():
 if __name__ == '__main__':
     # For local development
     app = create_app()
-    port = int(os.getenv('PORT', 5002))  # Changed to port 5002
+    port = int(os.getenv('PORT', 5003))  # Changed to port 5003
     app.run(host='0.0.0.0', port=port, debug=True)
