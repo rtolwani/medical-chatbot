@@ -442,6 +442,15 @@ def create_app():
             logger.error(f"Error serving audio: {str(e)}\n{traceback.format_exc()}")
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/debug/env')
+    def debug_env():
+        key = os.getenv('OPENAI_API_KEY')
+        return jsonify({'OPENAI_API_KEY': 'Exists' if key else 'Missing'}), 200
+
+    @app.route('/debug/ping')
+    def debug_ping():
+        return jsonify({'ping': 'pong'}), 200
+
     return app
 
 if __name__ == '__main__':
