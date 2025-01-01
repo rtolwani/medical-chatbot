@@ -447,5 +447,5 @@ def create_app():
 if __name__ == '__main__':
     # For local development
     app = create_app()
-    port = int(os.getenv('PORT', 5003))  # Changed to port 5003
+    port = int(os.getenv('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=True)
